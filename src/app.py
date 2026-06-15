@@ -35,7 +35,17 @@ st.markdown("""
         display: none !important;
     }
     
-    /* Seus estilos visuais corporativos */
+    /* 5. 🎯 CADASTRANDO A LIMPEZA: Remove o painel do GitHub do canto inferior direito */
+    div[data-testid="stStatusWidget"],
+    .stStatusWidget,
+    div[class*="StyledDeploymentIndicator"],
+    button[class*="StyledDeploymentIndicator"],
+    div[data-testid="stDecoration"] {
+        display: none !important;
+        visibility: hidden !important;
+    }
+    
+    /* Estilos visuais corporativos da Gedgov */
     .main-title { color: #1D4B8F; font-size: 34px; font-weight: bold; margin-bottom: 5px; }
     .sub-title { color: #666; font-size: 16px; margin-bottom: 25px; }
     </style>
