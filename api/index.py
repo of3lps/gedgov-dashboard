@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request
 import psycopg2
-import pandas as pd
+import psycopg2.extras
 
 app = Flask(__name__, template_folder='templates')
 
@@ -15,12 +15,11 @@ CIDADES = {
 }
 
 def formatar_real(valor):
-    if pd.isna(valor) or valor is None: return "R$ 0,00"
+    if valor is None: return "R$ 0,00"
     return f"R$ {float(valor):,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
 def carregar_dados(codigo_ibge):
     try:
-        # Conexão blindada Neon original
         conexao = psycopg2.connect(
             host="ep-damp-math-ateks048-pooler.c-9.us-east-1.aws.neon.tech",
             database="neondb",
@@ -31,7 +30,10 @@ def carregar_dados(codigo_ibge):
             options="endpoint=ep-damp-math-ateks048-pooler"
         )
         
-        # 1. TOTAIS (Sua query exata)
+        # Cursor que retorna dicionários em vez de tuplas
+        cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        
+        # 1. TOTAIS
         query_totais = f"""
             SELECT 
                 COUNT(*) AS total_convenios,
@@ -56,9 +58,10 @@ def carregar_dados(codigo_ibge):
             FROM raw_transferegov
             WHERE codigo_ibge = '{codigo_ibge}';
         """
-        df_totais = pd.read_sql(query_totais, conexao)
+        cursor.execute(query_totais)
+        totais = cursor.fetchone()
         
-        # 2. DETALHES (Sua query exata)
+        # 2. DETALHES
         query_detalhes = f"""
             SELECT 
                 payload->'dimConvenio'->>'numero' AS "Nº Convênio",
@@ -77,13 +80,15 @@ def carregar_dados(codigo_ibge):
             WHERE codigo_ibge = '{codigo_ibge}'
             ORDER BY "Status Vigência" DESC, "Saldo Restante" DESC;
         """
-        df_detalhes = pd.read_sql(query_detalhes, conexao)
+        cursor.execute(query_detalhes)
+        detalhes_brutos = cursor.fetchall()
+        
+        cursor.close()
         conexao.close()
         
-        # Formatando os dados para a Web
-        totais = df_totais.iloc[0]
+        # Formatando os totais
         dados_totais = {
-            'obras': int(totais['total_convenios']) if pd.notna(totais['total_convenios']) else 0,
+            'obras': totais['total_convenios'] if totais['total_convenios'] else 0,
             'alocado': formatar_real(totais['empenhado']),
             'pago': formatar_real(totais['pago']),
             'risco': formatar_real(totais['risco']),
@@ -91,10 +96,18 @@ def carregar_dados(codigo_ibge):
         }
         
         # Formatando as moedas na tabela de detalhes
-        df_detalhes['Valor Total'] = df_detalhes['Valor Total'].apply(formatar_real)
-        df_detalhes['Valor Pago'] = df_detalhes['Valor Pago'].apply(formatar_real)
-        df_detalhes['Saldo Restante'] = df_detalhes['Saldo Restante'].apply(formatar_real)
-        lista_detalhes = df_detalhes.to_dict('records')
+        lista_detalhes = []
+        for linha in detalhes_brutos:
+            lista_detalhes.append({
+                'Nº Convênio': linha['Nº Convênio'],
+                'Descrição da Obra': linha['Descrição da Obra'],
+                'Entidade Beneficiada': linha['Entidade Beneficiada'],
+                'Valor Total': formatar_real(linha['Valor Total']),
+                'Valor Pago': formatar_real(linha['Valor Pago']),
+                'Saldo Restante': formatar_real(linha['Saldo Restante']),
+                'Vencimento': linha['Vencimento'],
+                'Status Vigência': linha['Status Vigência']
+            })
         
         return dados_totais, lista_detalhes
 
@@ -104,7 +117,6 @@ def carregar_dados(codigo_ibge):
 
 @app.route('/')
 def dashboard():
-    # Pega o IBGE da URL, se não existir usa Itararé como padrão
     codigo_ibge = request.args.get('ibge', '3523206')
     nome_cidade = CIDADES.get(codigo_ibge, "Cidade Desconhecida")
     
@@ -117,5 +129,5 @@ def dashboard():
                            totais=totais, 
                            detalhes=detalhes)
 
-# Variável de entrada para o motor da Vercel
+# Variável de entrada para a Vercel
 app_handler = app
