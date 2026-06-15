@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  app_ingestao:
+    build: .
+    container_name: mvp_app_ingestao
+    depends_on:
+      - db_postgres
+    environment:
+      - DB_HOST=db_postgres
+      - DB_USER=admin
+      - DB_PASSWORD=admin_senha
+      - DB_NAME=itarare_gov_db
+    volumes:
+      - ./src:/app/src
+
+  db_postgres:
+    image: postgres:15-alpine
+    container_name: mvp_db_postgres
+    restart: always
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=admin_senha
+      - POSTGRES_DB=itarare_gov_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: mvp_pgadmin
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@itarare.gov 
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5051:80"
+    depends_on:
+      - db_postgres
+
+  # --- NOVO SERVIÇO: METABASE BI ---
+  metabase:
+    image: metabase/metabase:latest
+    container_name: mvp_metabase
+    restart: always
+    ports:
+      # Expõe o Metabase na porta 3000 do seu navegador
+      - "3000:3000"
+    environment:
+      - MB_DB_TYPE=postgres
+      - MB_DB_DBNAME=metabase_internal_db
+      - MB_DB_PORT=5432
+      - MB_DB_USER=admin
+      - MB_DB_PASS=admin_senha
+      - MB_DB_HOST=db_postgres
+    depends_on:
+      - db_postgres
+
+volumes:
+  postgres_data:
