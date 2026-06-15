@@ -13,6 +13,29 @@ st.set_page_config(
 
 st.markdown("""
     <style>
+    /* 1. Remove completamente a barra superior cinzenta do GitHub e do Streamlit */
+    header {
+        visibility: hidden !important;
+        display: none !important;
+        height: 0px !important;
+    }
+    
+    /* 2. Remove o menu flutuante dos 3 pontinhos */
+    #MainMenu {
+        visibility: hidden !important;
+    }
+    
+    /* 3. Remove o rodapé 'Made with Streamlit' */
+    footer {
+        visibility: hidden !important;
+    }
+    
+    /* 4. Remove botões residuais de Deploy que possam aparecer */
+    .stAppDeployButton {
+        display: none !important;
+    }
+    
+    /* Seus estilos visuais corporativos */
     .main-title { color: #1D4B8F; font-size: 34px; font-weight: bold; margin-bottom: 5px; }
     .sub-title { color: #666; font-size: 16px; margin-bottom: 25px; }
     </style>
