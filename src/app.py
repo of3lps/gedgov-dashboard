@@ -35,14 +35,19 @@ st.markdown("""
         display: none !important;
     }
     
-    /* 5. 🎯 CADASTRANDO A LIMPEZA: Remove o painel do GitHub do canto inferior direito */
+    /* 5. 🔥 FAXINA COMPLETA: Remove o painel do GitHub, botões de ação e indicadores de deploy no canto inferior direito */
     div[data-testid="stStatusWidget"],
     .stStatusWidget,
     div[class*="StyledDeploymentIndicator"],
     button[class*="StyledDeploymentIndicator"],
-    div[data-testid="stDecoration"] {
+    div[data-testid="stDecoration"],
+    .stActionButton,
+    div[data-testid="stToolbar"],
+    .stToolbar {
         display: none !important;
         visibility: hidden !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
     }
     
     /* Estilos visuais corporativos da Gedgov */
