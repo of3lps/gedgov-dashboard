@@ -12,7 +12,8 @@ def ingerir_dados_transferegov():
         "5102702": "Canarana / MT",
         "5107065": "Querência / MT",
         "5100201": "Água Boa / MT",
-        "2305605": "Independência / CE"
+        "2305605": "Independência / CE",
+        "3510500": "Caraguatatuba / SP" # <--- NOVO CLIENTE AQUI TAMBÉM
     }
     
     url_base = "https://api.portaldatransparencia.gov.br/api-de-dados/convenios"
