@@ -4,6 +4,7 @@ import psycopg2.extras
 
 app = Flask(__name__, template_folder='templates')
 
+# A Carteira de Clientes do seu SaaS
 CIDADES = {
     "3523206": "Itararé / SP",
     "3145059": "Nova Porteirinha / MG",
@@ -11,7 +12,8 @@ CIDADES = {
     "5102702": "Canarana / MT",
     "5107065": "Querência / MT",
     "5100201": "Água Boa / MT",
-    "2305605": "Independência / CE"
+    "2305605": "Independência / CE",
+    "3510500": "Caraguatatuba / SP" # <--- NOVO CLIENTE ADICIONADO
 }
 
 def formatar_real(valor):
