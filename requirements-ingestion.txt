@@ -1,0 +1,5 @@
+# Dependências para rodar a ingestão e o gerador de relatório LOCALMENTE.
+# (A API na Vercel usa apenas requirements.txt.)
+-r requirements.txt
+google-genai==1.0.0
+pdfkit==1.0.0

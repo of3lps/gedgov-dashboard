@@ -1,20 +1,26 @@
+import os
+
 import psycopg2
 from google import genai
 import pdfkit
-import os
+
+try:
+    from dotenv import load_dotenv
+
+    load_dotenv()
+except ImportError:
+    pass
 
 def gerar_relatorio_inteligente():
     print("[1] Conectando ao Banco de Dados...")
-    
+
     # 1. Puxando os dados reais do MVP
+    database_url = os.environ.get("DATABASE_URL")
+    if not database_url:
+        print("[Erro] DATABASE_URL não configurada no ambiente (veja .env.example).")
+        return
     try:
-        conexao = psycopg2.connect(
-            dbname="itarare_gov_db", 
-            user="admin",             # <-- Atualizado
-            password="admin_senha",   # <-- Atualizado
-            host="localhost", 
-            port="5433"               # <-- A porta correta do seu Docker!
-        )
+        conexao = psycopg2.connect(database_url)
         cursor = conexao.cursor()
         
         query = """
@@ -41,8 +47,11 @@ def gerar_relatorio_inteligente():
     # 2. Conectando ao Cérebro (Gemini API - Novo SDK)
     print("\n[2] Acionando a Inteligência Artificial (Gemini)...")
     
-    CHAVE_GEMINI = "AQ.Ab8RN6LLrkE6F8ZKlzxVDsi-U-hWV9ei-bDqMro-7Q7YuYqmDA" # <-- COLOQUE SUA CHAVE AQUI
-    
+    CHAVE_GEMINI = os.environ.get("GEMINI_API_KEY")
+    if not CHAVE_GEMINI:
+        print("[Erro] GEMINI_API_KEY não configurada no ambiente (veja .env.example).")
+        return
+
     try:
         client = genai.Client(api_key=CHAVE_GEMINI)
 
@@ -64,7 +73,7 @@ def gerar_relatorio_inteligente():
         """
 
         resposta_ia = client.models.generate_content(
-            model='gemini-3.5-flash',  # Nome exato documentado na versão atual da API
+            model='gemini-2.5-flash',  # Modelo Gemini válido atual
             contents=prompt
         )
         html_gerado = resposta_ia.text.strip()

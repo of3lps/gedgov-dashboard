@@ -1,0 +1,21 @@
+# Variáveis de ambiente / segredos
+.env
+.env.local
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Relatórios gerados
+Relatorio_*.html
+Relatorio_*.pdf
+*.pdf
+
+# Ambientes virtuais
+venv/
+.venv/
+env/
+
+# Vercel
+.vercel

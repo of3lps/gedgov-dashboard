@@ -116,6 +116,41 @@
                 </table>
             </div>
 
+            <hr style="border-color: #333;" class="my-5">
+            <h4 class="mb-4">🏛️ Conformidade Fiscal (Siconfi)</h4>
+
+            {% if siconfi %}
+            <div class="table-responsive">
+                <table class="table table-dark table-hover">
+                    <thead>
+                        <tr>
+                            <th>Documento</th>
+                            <th>Período</th>
+                            <th>Status</th>
+                            <th>Data do Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for entrega in siconfi %}
+                        <tr>
+                            <td>{{ entrega['Documento'] }}</td>
+                            <td>{{ entrega['Período'] }}</td>
+                            <td>
+                                {% if entrega['Status'] and 'ntreg' in entrega['Status'] %}✅{% else %}⚠️{% endif %}
+                                {{ entrega['Status'] }}
+                            </td>
+                            <td>{{ entrega['Data Status'] }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-secondary" style="background-color: #1a1c24; color: #888; border: 1px solid #333;">
+                Sem registros de entregas fiscais (Siconfi) para {{ nome_cidade }} no momento.
+            </div>
+            {% endif %}
+
         {% else %}
             <div class="alert alert-warning" style="background-color: #332701; color: #ffca2c; border: 1px solid #ffca2c;">
                 Aguardando dados para {{ nome_cidade }}. Certifique-se de ter rodado a ingestão para este banco na nuvem!
