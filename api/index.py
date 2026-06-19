@@ -42,6 +42,18 @@ def _num(valor):
     return float(valor) if valor is not None else 0.0
 
 
+def _brl_to_float(texto):
+    """Converte um valor monetário BR ('R$ 480.000,00') em float (0.0 se vazio)."""
+    if not texto:
+        return 0.0
+    limpo = str(texto).replace("R$", "").replace("\xa0", "").strip()
+    limpo = limpo.replace(".", "").replace(",", ".")
+    try:
+        return float(limpo)
+    except ValueError:
+        return 0.0
+
+
 # Mapeia o código de status do Siconfi para (rótulo legível, cor do badge Bootstrap).
 SICONFI_STATUS = {
     "HO": ("Homologado", "success"),
@@ -129,6 +141,13 @@ def carregar_dados(codigo_ibge):
         cursor.execute(query_siconfi, (codigo_ibge, codigo_ibge))
         siconfi_brutos = cursor.fetchall()
 
+        # 3. CONVÊNIOS ESTADUAIS (SP) — payload cru do CSV da SGRI; só cidades de SP
+        cursor.execute(
+            "SELECT payload FROM raw_convenios_sp WHERE codigo_ibge = %s;",
+            (codigo_ibge,),
+        )
+        convenios_sp_brutos = cursor.fetchall()
+
         cursor.close()
 
         # Convênios com valores numéricos (KPIs/gráficos/filtros são calculados no cliente)
@@ -173,11 +192,37 @@ def carregar_dados(codigo_ibge):
                 'data_status': linha['data_status'],
             })
 
-        return convenios, lista_siconfi
+        # Convênios estaduais: payload é o dicionário cru do CSV (chaves em PT com acento).
+        # Parseamos valores/status aqui; o filtro/ordenação fica no cliente.
+        convenios_sp = []
+        for linha in convenios_sp_brutos:
+            p = linha['payload']
+            numero = (p.get('Convênio') or '').strip()
+            assinatura = (p.get('Data de Assinatura') or '').strip()
+            convenios_sp.append({
+                'demanda': p.get('Demanda'),
+                'convenio': numero,
+                'obra': p.get('Nome da Obra'),
+                'portfolio': p.get('Portfólio'),
+                'origem': p.get('Origem'),                       # parlamentar/origem do recurso
+                'origem_demanda': p.get('Origem da Demanda'),    # ex.: 'Emenda LOA'
+                'valor_estado': _brl_to_float(p.get('Valor do estado')),
+                'valor_total': _brl_to_float(p.get('Valor da demanda')),
+                'ano': p.get('Ano'),
+                'processo': p.get('Processo'),
+                'er': p.get('Escritório Regional'),
+                'criacao': p.get('Data de criação da demanda'),
+                'tramitacao': p.get('Data da última tramitação'),
+                'assinatura': assinatura,
+                'aditamento': (p.get('Solicitação de Aditamento Pendente') or '').strip(),
+                'assinado': bool(numero and assinatura),
+            })
+
+        return convenios, lista_siconfi, convenios_sp
 
     except Exception as e:
         print("Erro:", e)
-        return None, None
+        return None, None, None
     finally:
         if conexao is not None:
             conexao.close()
@@ -192,7 +237,7 @@ def dashboard():
         codigo_ibge = IBGE_PADRAO
     nome_cidade = CIDADES.get(codigo_ibge, "Cidade Desconhecida")
 
-    convenios, siconfi = carregar_dados(codigo_ibge)
+    convenios, siconfi, convenios_sp = carregar_dados(codigo_ibge)
 
     return render_template('index.html',
                            cidades=CIDADES,
@@ -200,7 +245,9 @@ def dashboard():
                            nome_cidade=nome_cidade,
                            convenios=convenios if convenios is not None else [],
                            total_obras=len(convenios) if convenios else 0,
-                           siconfi=siconfi)
+                           siconfi=siconfi,
+                           convenios_sp=convenios_sp if convenios_sp is not None else [],
+                           total_sp=len(convenios_sp) if convenios_sp else 0)
 
 
 # Variável de entrada para a Vercel

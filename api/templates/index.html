@@ -143,6 +143,22 @@
             .det-panel { width: 100%; }
         }
 
+        /* ===== Abas Federal | Estadual ===== */
+        .tabs { display: flex; gap: 4px; border-bottom: 2px solid var(--line); margin-bottom: 22px; }
+        .tab-btn { border: 0; background: transparent; padding: 10px 18px; font-size: 14px; font-weight: 600; color: var(--muted); cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px; display: inline-flex; align-items: center; gap: 8px; }
+        .tab-btn:hover { color: var(--ink); }
+        .tab-btn.active { color: var(--brand); border-bottom-color: var(--brand); }
+        .tab-count { font-size: 11px; font-weight: 700; background: var(--brand-soft); color: var(--brand); border-radius: 20px; padding: .1em .55em; }
+        .tab-pane { display: none; }
+        .tab-pane.active { display: block; }
+
+        /* ===== Status convênio estadual ===== */
+        .est-badge { font-size: 12px; font-weight: 600; padding: .35em .6em; border-radius: 20px; white-space: nowrap; }
+        .est-assinado { background: #e3f5ec; color: var(--ok); }
+        .est-tramite { background: #fff4e0; color: var(--warn); }
+        .est-adit { font-size: 11px; font-weight: 600; padding: .25em .55em; border-radius: 20px; background: #fbe6e6; color: var(--danger); }
+        .orig-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; color: var(--brand); background: var(--brand-soft); border-radius: 6px; padding: .15em .5em; }
+
         /* ===== Botão voltar ao topo ===== */
         .btn-topo {
             position: fixed; right: 18px; bottom: 18px; z-index: 1030;
@@ -202,6 +218,18 @@
         <div class="page-title">Portal de Gestão Orçamentária</div>
         <div class="page-sub">Visão executiva — <b>{{ nome_cidade }}</b></div>
 
+        <!-- Abas: Federal x Estadual (totalmente separados) -->
+        <div class="tabs" role="tablist">
+            <button class="tab-btn active" data-tab="federal" type="button">
+                <i class="bi bi-bank"></i> Federal{% if total_obras > 0 %} <span class="tab-count">{{ total_obras }}</span>{% endif %}
+            </button>
+            <button class="tab-btn" data-tab="estadual" type="button">
+                <i class="bi bi-geo-alt"></i> Estadual (SP){% if total_sp > 0 %} <span class="tab-count">{{ total_sp }}</span>{% endif %}
+            </button>
+        </div>
+
+        <!-- ===================== ABA FEDERAL ===================== -->
+        <div class="tab-pane active" id="pane-federal">
         {% if total_obras > 0 %}
 
             <!-- KPIs -->
@@ -386,6 +414,97 @@
                 Aguardando dados para {{ nome_cidade }}. Certifique-se de ter rodado a ingestão para este município.
             </div>
         {% endif %}
+        </div><!-- /pane-federal -->
+
+        <!-- ===================== ABA ESTADUAL (SP) ===================== -->
+        <div class="tab-pane" id="pane-estadual">
+        {% if total_sp > 0 %}
+
+            <!-- KPIs estaduais -->
+            <div class="row row-cols-2 row-cols-lg-4 g-3 mb-4">
+                <div class="col"><div class="kpi">
+                    <div class="k-top"><span class="k-label">Convênios (filtro)</span><i class="bi bi-folder2-open k-icon"></i></div>
+                    <div class="k-value" id="spKpiTotal">—</div>
+                </div></div>
+                <div class="col"><div class="kpi">
+                    <div class="k-top"><span class="k-label">Valor do Estado</span><i class="bi bi-cash-stack k-icon"></i></div>
+                    <div class="k-value" id="spKpiValor">—</div>
+                </div></div>
+                <div class="col"><div class="kpi k-pago">
+                    <div class="k-top"><span class="k-label">Assinados</span><i class="bi bi-check2-circle k-icon"></i></div>
+                    <div class="k-value" id="spKpiAssinados">—</div>
+                </div></div>
+                <div class="col"><div class="kpi k-risco">
+                    <div class="k-top"><span class="k-label">Em tramitação</span><i class="bi bi-hourglass-split k-icon"></i></div>
+                    <div class="k-value" id="spKpiTramite">—</div>
+                </div></div>
+            </div>
+
+            <!-- Lista de convênios estaduais -->
+            <div class="panel mb-4">
+                <div class="section-title"><i class="bi bi-geo-alt"></i> Convênios Estaduais — Governo do Estado de SP</div>
+
+                <div class="toolbar">
+                    <div class="grp" style="flex:1 1 260px;">
+                        <label for="spBusca">Buscar</label>
+                        <div class="search-wrap">
+                            <i class="bi bi-search"></i>
+                            <input type="text" id="spBusca" class="form-control" placeholder="Obra, origem ou nº...">
+                        </div>
+                    </div>
+                    <div class="grp">
+                        <label for="spStatus">Status</label>
+                        <select id="spStatus" class="form-select">
+                            <option value="">Todos</option>
+                            <option value="assinado">Convênio assinado</option>
+                            <option value="tramite">Em tramitação</option>
+                        </select>
+                    </div>
+                    <div class="grp" style="flex:1 1 200px;">
+                        <label for="spOrigem">Tipo de recurso</label>
+                        <select id="spOrigem" class="form-select"><option value="">Todos</option></select>
+                    </div>
+                    <div class="grp">
+                        <label for="spAno">Ano</label>
+                        <select id="spAno" class="form-select"><option value="">Todos</option></select>
+                    </div>
+                    <div class="grp">
+                        <label for="spOrd">Ordenar por</label>
+                        <select id="spOrd" class="form-select">
+                            <option value="valor_desc">Maior valor (Estado)</option>
+                            <option value="ano_desc">Ano (mais recente)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="contador" id="spContador"></span>
+                </div>
+
+                <!-- Desktop: tabela -->
+                <div class="table-responsive d-none d-lg-block">
+                    <table class="table align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Convênio</th><th>Obra</th><th>Tipo</th>
+                                <th class="text-end">Valor Estado</th><th class="text-end">Valor Total</th>
+                                <th>Ano</th><th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="spTbody"></tbody>
+                    </table>
+                </div>
+                <!-- Mobile: cartões -->
+                <div class="d-lg-none" id="spCards"></div>
+                <div class="no-results" id="spSem">Nenhum convênio estadual para os filtros aplicados.</div>
+            </div>
+
+        {% else %}
+            <div class="alert alert-secondary">
+                <i class="bi bi-info-circle me-1"></i>
+                Sem convênios estaduais para <b>{{ nome_cidade }}</b>. Esta aba cobre os repasses do <b>Governo do Estado de São Paulo</b> e está disponível para municípios de SP.
+            </div>
+        {% endif %}
+        </div><!-- /pane-estadual -->
     </div>
 
     <!-- Detalhe do convênio (offcanvas lateral) -->
@@ -781,6 +900,192 @@
         document.addEventListener('keydown', e => { if (e.key === 'Escape') fecharDetalhe(); });
 
         // primeira renderização
+        aplicar();
+    })();
+    </script>
+
+    <!-- ===================== ABAS + ABA ESTADUAL (SP) ===================== -->
+    <script>
+    (function () {
+        // ----- alternância de abas Federal | Estadual -----
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        const panes = { federal: document.getElementById('pane-federal'), estadual: document.getElementById('pane-estadual') };
+        tabBtns.forEach(btn => btn.addEventListener('click', () => {
+            const alvo = btn.dataset.tab;
+            tabBtns.forEach(b => b.classList.toggle('active', b === btn));
+            Object.entries(panes).forEach(([k, el]) => { if (el) el.classList.toggle('active', k === alvo); });
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }));
+
+        // ----- dados estaduais -----
+        const CONVENIOS_SP = {{ convenios_sp | tojson }};
+        const spTbody = document.getElementById('spTbody');
+        if (!spTbody) return;  // cidade sem convênios estaduais (ex.: fora de SP)
+
+        const fmtBRL = v => 'R$ ' + Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const fmtBRLk = v => 'R$ ' + Number(v || 0).toLocaleString('pt-BR', { maximumFractionDigits: 0 });
+        const esc = s => (s == null ? '' : String(s)).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+        const estado = { busca: '', status: '', origem: '', ano: '', ord: 'valor_desc' };
+        let filtrados = [];
+
+        function statusInfo(c) {
+            return c.assinado
+                ? { key: 'assinado', label: 'Convênio assinado', cls: 'est-assinado' }
+                : { key: 'tramite', label: 'Em tramitação', cls: 'est-tramite' };
+        }
+        function statusBadge(c) {
+            const s = statusInfo(c);
+            const adit = (String(c.aditamento).toUpperCase() === 'SIM') ? ` <span class="est-adit" title="Aditamento pendente">Aditamento</span>` : '';
+            return `<span class="est-badge ${s.cls}">${s.label}</span>${adit}`;
+        }
+
+        function calcular() {
+            const q = estado.busca.trim().toLowerCase();
+            filtrados = CONVENIOS_SP.filter(c => {
+                if (q && !((c.obra || '').toLowerCase().includes(q) || (c.origem || '').toLowerCase().includes(q) || (c.convenio || '').toLowerCase().includes(q))) return false;
+                if (estado.status && statusInfo(c).key !== estado.status) return false;
+                if (estado.origem && (c.origem_demanda || '') !== estado.origem) return false;
+                if (estado.ano && String(c.ano || '') !== estado.ano) return false;
+                return true;
+            });
+            filtrados.sort((a, b) => estado.ord === 'ano_desc'
+                ? String(b.ano || '').localeCompare(String(a.ano || ''))
+                : (b.valor_estado - a.valor_estado));
+        }
+
+        function atualizarKpis() {
+            let valor = 0, assinados = 0, tramite = 0;
+            filtrados.forEach(c => { valor += c.valor_estado; if (c.assinado) assinados++; else tramite++; });
+            document.getElementById('spKpiTotal').textContent = filtrados.length;
+            document.getElementById('spKpiValor').textContent = fmtBRLk(valor);
+            document.getElementById('spKpiAssinados').textContent = assinados;
+            document.getElementById('spKpiTramite').textContent = tramite;
+        }
+
+        function render() {
+            document.getElementById('spSem').style.display = filtrados.length ? 'none' : 'block';
+            spTbody.innerHTML = filtrados.map(c => `
+                <tr class="conv-row" data-demanda="${esc(c.demanda)}" tabindex="0" role="button" title="Ver detalhes">
+                    <td class="num">${esc(c.convenio || '—')}</td>
+                    <td>${esc(c.obra)}<div class="orig-chip mt-1" title="${esc(c.origem)}"><i class="bi bi-megaphone"></i>${esc(c.origem_demanda || '—')}</div></td>
+                    <td>${esc(c.portfolio || '—')}</td>
+                    <td class="num text-end">${fmtBRL(c.valor_estado)}</td>
+                    <td class="num text-end">${fmtBRL(c.valor_total)}</td>
+                    <td class="num">${esc(c.ano || '—')}</td>
+                    <td>${statusBadge(c)}</td>
+                </tr>`).join('');
+
+            document.getElementById('spCards').innerHTML = filtrados.map(c => `
+                <div class="conv-card" data-demanda="${esc(c.demanda)}" tabindex="0" role="button">
+                    <div class="d-flex justify-content-between align-items-start gap-2">
+                        <div class="cc-obra">${esc(c.obra)}</div>${statusBadge(c)}
+                    </div>
+                    <div class="orig-chip mt-1" title="${esc(c.origem)}"><i class="bi bi-megaphone"></i>${esc(c.origem_demanda || '—')}</div>
+                    <div class="cc-grid mt-2">
+                        <div><span class="lbl">Valor Estado</span><span class="num">${fmtBRL(c.valor_estado)}</span></div>
+                        <div><span class="lbl">Valor Total</span><span class="num">${fmtBRL(c.valor_total)}</span></div>
+                        <div><span class="lbl">Convênio</span><span class="num">${esc(c.convenio || '—')}</span></div>
+                        <div><span class="lbl">Ano</span><span class="num">${esc(c.ano || '—')}</span></div>
+                    </div>
+                    <div class="text-end mt-2"><span class="small text-primary">Ver detalhes <i class="bi bi-chevron-right"></i></span></div>
+                </div>`).join('');
+
+            document.getElementById('spContador').textContent = `Exibindo ${filtrados.length} de ${CONVENIOS_SP.length} convênios estaduais`;
+        }
+
+        function aplicar() { calcular(); atualizarKpis(); render(); }
+
+        // popular selects de tipo de recurso e ano
+        (function preencher() {
+            const origens = {}, anos = {};
+            CONVENIOS_SP.forEach(c => {
+                if (c.origem_demanda) origens[c.origem_demanda] = (origens[c.origem_demanda] || 0) + 1;
+                if (c.ano) anos[c.ano] = (anos[c.ano] || 0) + 1;
+            });
+            const selO = document.getElementById('spOrigem');
+            Object.entries(origens).sort((a, b) => b[1] - a[1]).forEach(([o, n]) => {
+                const op = document.createElement('option'); op.value = o; op.textContent = `${o} (${n})`; selO.appendChild(op);
+            });
+            const selA = document.getElementById('spAno');
+            Object.keys(anos).sort((a, b) => b.localeCompare(a)).forEach(a => {
+                const op = document.createElement('option'); op.value = a; op.textContent = a; selA.appendChild(op);
+            });
+        })();
+
+        // ----- detalhe estadual (reusa o offcanvas #detPanel) -----
+        function fecharDet() {
+            document.getElementById('detPanel').classList.remove('show');
+            document.getElementById('detBackdrop').classList.remove('show');
+            document.body.style.overflow = '';
+        }
+        function detRow(k, v, isHtml) {
+            const val = (v == null || v === '') ? '—' : v;
+            return `<div class="det-row"><span class="det-k">${k}</span><span class="det-v">${isHtml ? val : esc(val)}</span></div>`;
+        }
+        function abrirDetSP(c) {
+            const s = statusInfo(c);
+            const contrap = Math.max(0, Number(c.valor_total || 0) - Number(c.valor_estado || 0));
+            const adit = (String(c.aditamento).toUpperCase() === 'SIM');
+            document.getElementById('detNum').textContent = `Convênio nº ${c.convenio || '—'} · demanda ${c.demanda || '—'}`;
+            document.getElementById('detObj').textContent = c.obra || 'Sem objeto informado';
+            document.getElementById('detBody').innerHTML = `
+                <div class="det-sec">
+                    <div class="det-sec-title"><i class="bi bi-flag"></i> Situação</div>
+                    <div class="lib-box">
+                        <div class="lib-status"><span class="est-badge ${s.cls}">${s.label}</span>${adit ? ' <span class="est-adit">Aditamento pendente</span>' : ''}</div>
+                        <div class="lib-hint">${c.assinado ? 'Convênio formalizado (possui número e data de assinatura).' : 'Demanda ainda em tramitação — sem convênio formalizado.'} Recurso do Governo do Estado de São Paulo.</div>
+                    </div>
+                </div>
+                <div class="det-sec">
+                    <div class="det-sec-title"><i class="bi bi-wallet2"></i> Financeiro</div>
+                    ${detRow('Valor do Estado', fmtBRL(c.valor_estado))}
+                    ${detRow('Valor total', fmtBRL(c.valor_total))}
+                    ${detRow('Contrapartida (estimada)', fmtBRL(contrap))}
+                </div>
+                <div class="det-sec">
+                    <div class="det-sec-title"><i class="bi bi-megaphone"></i> Origem do recurso</div>
+                    ${detRow('Tipo', c.origem_demanda)}
+                    ${detRow('Origem', c.origem)}
+                    ${detRow('Escritório Regional', c.er)}
+                </div>
+                <div class="det-sec">
+                    <div class="det-sec-title"><i class="bi bi-info-circle"></i> Identificação</div>
+                    ${detRow('Portfólio', c.portfolio)}
+                    ${detRow('Processo', c.processo)}
+                    ${detRow('Ano', c.ano)}
+                </div>
+                <div class="det-sec">
+                    <div class="det-sec-title"><i class="bi bi-calendar-event"></i> Datas</div>
+                    ${detRow('Criação da demanda', c.criacao)}
+                    ${detRow('Assinatura', c.assinatura)}
+                    ${detRow('Última tramitação', c.tramitacao)}
+                </div>`;
+            document.getElementById('detPanel').classList.add('show');
+            document.getElementById('detBackdrop').classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
+        function abrirPorDemanda(d) {
+            const c = CONVENIOS_SP.find(x => String(x.demanda) === String(d));
+            if (c) abrirDetSP(c);
+        }
+
+        // listeners
+        document.getElementById('spBusca').addEventListener('input', e => { estado.busca = e.target.value; aplicar(); });
+        document.getElementById('spStatus').addEventListener('change', e => { estado.status = e.target.value; aplicar(); });
+        document.getElementById('spOrigem').addEventListener('change', e => { estado.origem = e.target.value; aplicar(); });
+        document.getElementById('spAno').addEventListener('change', e => { estado.ano = e.target.value; aplicar(); });
+        document.getElementById('spOrd').addEventListener('change', e => { estado.ord = e.target.value; aplicar(); });
+
+        spTbody.addEventListener('click', e => { const r = e.target.closest('tr[data-demanda]'); if (r) abrirPorDemanda(r.dataset.demanda); });
+        spTbody.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { const r = e.target.closest('tr[data-demanda]'); if (r) { e.preventDefault(); abrirPorDemanda(r.dataset.demanda); } } });
+        document.getElementById('spCards').addEventListener('click', e => { const card = e.target.closest('.conv-card[data-demanda]'); if (card) abrirPorDemanda(card.dataset.demanda); });
+
+        // fechar (garante funcionamento mesmo se a aba federal não tiver dados)
+        document.getElementById('detClose').addEventListener('click', fecharDet);
+        document.getElementById('detBackdrop').addEventListener('click', fecharDet);
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') fecharDet(); });
+
         aplicar();
     })();
     </script>

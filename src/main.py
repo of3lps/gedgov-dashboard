@@ -1,6 +1,7 @@
 from config import get_conn
 from ingestao_transferegov import ingerir_dados_transferegov
 from ingestao_siconfi import ingerir_dados_siconfi
+from ingestao_convenios_sp import ingerir_convenios_sp
 
 
 def criar_tabelas():
@@ -33,6 +34,18 @@ def criar_tabelas():
         "CREATE INDEX IF NOT EXISTS idx_siconfi_ibge ON raw_siconfi_entregas (cod_ibge);"
     )
 
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS raw_convenios_sp (
+            id SERIAL PRIMARY KEY,
+            codigo_ibge VARCHAR(20),
+            payload JSONB,
+            ingested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+    """)
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_convenios_sp_ibge ON raw_convenios_sp (codigo_ibge);"
+    )
+
     conn.commit()
     cursor.close()
     conn.close()
@@ -51,6 +64,10 @@ def main():
     print("\n--- Coletando Siconfi ---")
     ano_ref = 2025
     ingerir_dados_siconfi(ano_ref)
+
+    # 3. Ingestão de convênios estaduais de SP (CSV em lote, só cidades de SP)
+    print("\n--- Coletando Convênios Estaduais (SP) ---")
+    ingerir_convenios_sp()
 
     print("\nPipeline finalizado com sucesso!")
 
