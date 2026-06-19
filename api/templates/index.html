@@ -221,10 +221,6 @@
                             <label class="form-check-label small" for="filtroVencendo">Vencendo em 90d</label>
                         </div>
                     </div>
-                    <div class="grp">
-                        <label>&nbsp;</label>
-                        <button id="btnExport" class="btn btn-outline-primary"><i class="bi bi-download me-1"></i>CSV</button>
-                    </div>
                 </div>
 
                 <!-- Contador + chips -->
@@ -462,24 +458,6 @@
             renderPagina();
         }
 
-        // ----- export CSV (conjunto filtrado inteiro) -----
-        function exportarCSV() {
-            const cab = ['Nº', 'Obra', 'Entidade', 'Valor Total', 'Valor Pago', 'Saldo', 'Vencimento', 'Status'];
-            const cell = v => `"${String(v == null ? '' : v).replace(/"/g, '""')}"`;
-            const money = n => Number(n || 0).toFixed(2).replace('.', ',');
-            const linhas = filtrados.map(c => [
-                c.n, c.obra, c.entidade, money(c.valor), money(c.pago), money(c.saldo),
-                fmtData(c.venc), STATUS_LABEL[c.status]
-            ].map(cell).join(';'));
-            const csv = '﻿' + [cab.map(cell).join(';'), ...linhas].join('\r\n');
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url; a.download = 'convenios.csv';
-            document.body.appendChild(a); a.click(); a.remove();
-            URL.revokeObjectURL(url);
-        }
-
         // ----- gráficos (criados uma vez) -----
         chartExec = new Chart(document.getElementById('chartExec'), {
             type: 'doughnut',
@@ -498,7 +476,6 @@
         document.getElementById('ordenacao').addEventListener('change', e => { state.ordenacao = e.target.value; aplicar(false); });
         document.getElementById('filtroPago0').addEventListener('change', e => { state.pagoZero = e.target.checked; aplicar(); });
         document.getElementById('filtroVencendo').addEventListener('change', e => { state.vencendo = e.target.checked; aplicar(); });
-        document.getElementById('btnExport').addEventListener('click', exportarCSV);
 
         document.getElementById('paginacao').addEventListener('click', e => {
             const b = e.target.closest('button[data-pag]'); if (!b) return;
