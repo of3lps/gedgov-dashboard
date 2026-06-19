@@ -76,57 +76,29 @@ def carregar_dados(codigo_ibge):
         # Cursor que retorna dicionários em vez de tuplas
         cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
-        # 1. TOTAIS (query parametrizada — sem interpolação de input do usuário)
-        query_totais = """
+        # 1. CONVÊNIOS (dados numéricos crus — filtro/ordenação/KPIs ficam no cliente)
+        query_convenios = """
             SELECT
-                COUNT(*) AS total_convenios,
-                SUM((payload->>'valor')::numeric) AS empenhado,
-                SUM((payload->>'valorLiberado')::numeric) AS pago,
-                SUM(
-                    CASE
-                        WHEN payload->>'dataFinalVigencia' IS NOT NULL
-                         AND TO_DATE(payload->>'dataFinalVigencia', 'YYYY-MM-DD') >= CURRENT_DATE
-                        THEN GREATEST((payload->>'valor')::numeric - (payload->>'valorLiberado')::numeric, 0)
-                        ELSE 0
-                    END
-                ) AS risco,
-                SUM(
-                    CASE
-                        WHEN payload->>'dataFinalVigencia' IS NOT NULL
-                         AND TO_DATE(payload->>'dataFinalVigencia', 'YYYY-MM-DD') < CURRENT_DATE
-                        THEN GREATEST((payload->>'valor')::numeric - (payload->>'valorLiberado')::numeric, 0)
-                        ELSE 0
-                    END
-                ) AS perdido
-            FROM raw_transferegov
-            WHERE codigo_ibge = %s;
-        """
-        cursor.execute(query_totais, (codigo_ibge,))
-        totais = cursor.fetchone()
-
-        # 2. DETALHES (query parametrizada)
-        query_detalhes = """
-            SELECT
-                payload->'dimConvenio'->>'numero' AS "Nº Convênio",
-                payload->'dimConvenio'->>'objeto' AS "Descrição da Obra",
-                payload->'convenente'->>'nome' AS "Entidade Beneficiada",
-                (payload->>'valor')::numeric AS "Valor Total",
-                (payload->>'valorLiberado')::numeric AS "Valor Pago",
-                GREATEST(((payload->>'valor')::numeric - (payload->>'valorLiberado')::numeric), 0) AS "Saldo Restante",
-                payload->>'dataFinalVigencia' AS "Vencimento",
+                payload->'dimConvenio'->>'numero' AS numero,
+                payload->'dimConvenio'->>'objeto' AS objeto,
+                payload->'convenente'->>'nome' AS entidade,
+                (payload->>'valor')::numeric AS valor,
+                (payload->>'valorLiberado')::numeric AS pago,
+                GREATEST(((payload->>'valor')::numeric - (payload->>'valorLiberado')::numeric), 0) AS saldo,
+                payload->>'dataFinalVigencia' AS venc,
                 CASE
-                    WHEN payload->>'dataFinalVigencia' IS NULL THEN '⚪ Indefinido'
-                    WHEN TO_DATE(payload->>'dataFinalVigencia', 'YYYY-MM-DD') >= CURRENT_DATE THEN '🟢 Ativo'
-                    ELSE '🔴 Vencido (Perdido)'
-                END AS "Status Vigência"
+                    WHEN payload->>'dataFinalVigencia' IS NULL THEN 'indef'
+                    WHEN TO_DATE(payload->>'dataFinalVigencia', 'YYYY-MM-DD') >= CURRENT_DATE THEN 'ativo'
+                    ELSE 'vencido'
+                END AS status
             FROM raw_transferegov
             WHERE codigo_ibge = %s
-            ORDER BY "Status Vigência" DESC, "Saldo Restante" DESC;
+            ORDER BY status DESC, saldo DESC;
         """
-        cursor.execute(query_detalhes, (codigo_ibge,))
-        detalhes_brutos = cursor.fetchall()
+        cursor.execute(query_convenios, (codigo_ibge,))
+        convenios_brutos = cursor.fetchall()
 
-        # 3. CONFORMIDADE FISCAL (Siconfi) — entregas do ano mais recente disponível
+        # 2. CONFORMIDADE FISCAL (Siconfi) — entregas do ano mais recente disponível
         query_siconfi = """
             SELECT
                 payload->>'entregavel' AS documento,
@@ -145,35 +117,18 @@ def carregar_dados(codigo_ibge):
 
         cursor.close()
 
-        # Formatando os totais
-        dados_totais = {
-            'obras': totais['total_convenios'] if totais['total_convenios'] else 0,
-            'alocado': formatar_real(totais['empenhado']),
-            'pago': formatar_real(totais['pago']),
-            'risco': formatar_real(totais['risco']),
-            'perdido': formatar_real(totais['perdido'])
-        }
-
-        # Formatando as moedas na tabela de detalhes + contagem por status (gráficos)
-        lista_detalhes = []
-        ativos = vencidos = indefinidos = 0
-        for linha in detalhes_brutos:
-            status_vig = linha['Status Vigência']
-            if 'Ativo' in status_vig:
-                ativos += 1
-            elif 'Vencido' in status_vig:
-                vencidos += 1
-            else:
-                indefinidos += 1
-            lista_detalhes.append({
-                'Nº Convênio': linha['Nº Convênio'],
-                'Descrição da Obra': linha['Descrição da Obra'],
-                'Entidade Beneficiada': linha['Entidade Beneficiada'],
-                'Valor Total': formatar_real(linha['Valor Total']),
-                'Valor Pago': formatar_real(linha['Valor Pago']),
-                'Saldo Restante': formatar_real(linha['Saldo Restante']),
-                'Vencimento': linha['Vencimento'],
-                'Status Vigência': status_vig
+        # Convênios com valores numéricos (KPIs/gráficos/filtros são calculados no cliente)
+        convenios = []
+        for linha in convenios_brutos:
+            convenios.append({
+                'n': linha['numero'],
+                'obra': linha['objeto'],
+                'entidade': linha['entidade'],
+                'valor': _num(linha['valor']),
+                'pago': _num(linha['pago']),
+                'saldo': _num(linha['saldo']),
+                'venc': linha['venc'],          # 'YYYY-MM-DD' ou None
+                'status': linha['status'],      # 'ativo' | 'vencido' | 'indef'
             })
 
         # Entregas Siconfi com badge de status resolvido
@@ -190,21 +145,11 @@ def carregar_dados(codigo_ibge):
                 'data_status': linha['data_status'],
             })
 
-        # Dados numéricos para os gráficos (Chart.js)
-        grafico = {
-            'pago': _num(totais['pago']),
-            'risco': _num(totais['risco']),
-            'perdido': _num(totais['perdido']),
-            'ativos': ativos,
-            'vencidos': vencidos,
-            'indefinidos': indefinidos,
-        }
-
-        return dados_totais, lista_detalhes, lista_siconfi, grafico
+        return convenios, lista_siconfi
 
     except Exception as e:
         print("Erro:", e)
-        return None, None, None, None
+        return None, None
     finally:
         if conexao is not None:
             conexao.close()
@@ -219,16 +164,15 @@ def dashboard():
         codigo_ibge = IBGE_PADRAO
     nome_cidade = CIDADES.get(codigo_ibge, "Cidade Desconhecida")
 
-    totais, detalhes, siconfi, grafico = carregar_dados(codigo_ibge)
+    convenios, siconfi = carregar_dados(codigo_ibge)
 
     return render_template('index.html',
                            cidades=CIDADES,
                            ibge_atual=codigo_ibge,
                            nome_cidade=nome_cidade,
-                           totais=totais,
-                           detalhes=detalhes,
-                           siconfi=siconfi,
-                           grafico=grafico)
+                           convenios=convenios if convenios is not None else [],
+                           total_obras=len(convenios) if convenios else 0,
+                           siconfi=siconfi)
 
 
 # Variável de entrada para a Vercel

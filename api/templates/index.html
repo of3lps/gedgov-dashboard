@@ -21,26 +21,17 @@
             --card: #ffffff;
         }
         * { box-sizing: border-box; }
-        body {
-            background-color: var(--bg);
-            color: var(--ink);
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-        }
+        body { background-color: var(--bg); color: var(--ink); font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
 
         /* ===== Top bar ===== */
-        .topbar {
-            background: var(--card);
-            border-bottom: 1px solid var(--line);
-            position: sticky; top: 0; z-index: 1020;
-            box-shadow: 0 1px 3px rgba(16,24,40,.04);
-        }
+        .topbar { background: var(--card); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 1020; box-shadow: 0 1px 3px rgba(16,24,40,.04); }
         .topbar .brand { display: flex; align-items: center; gap: 12px; }
         .topbar .brand img { max-height: 42px; object-fit: contain; }
         .topbar .brand .name { font-weight: 700; color: var(--brand); font-size: 18px; line-height: 1; }
         .topbar .brand .tag { font-size: 12px; color: var(--muted); }
         .city-select { max-width: 280px; }
-        .form-select { border-color: var(--line); }
-        .form-select:focus { border-color: var(--brand); box-shadow: 0 0 0 .2rem rgba(29,75,143,.12); }
+        .form-select, .form-control { border-color: var(--line); }
+        .form-select:focus, .form-control:focus { border-color: var(--brand); box-shadow: 0 0 0 .2rem rgba(29,75,143,.12); }
 
         /* ===== Page ===== */
         .page { max-width: 1240px; margin: 0 auto; padding: 28px 20px 64px; }
@@ -50,12 +41,7 @@
         .section-title i { color: var(--brand); }
 
         /* ===== KPI cards ===== */
-        .kpi {
-            background: var(--card); border: 1px solid var(--line); border-radius: 14px;
-            padding: 16px 18px; height: 100%;
-            box-shadow: 0 1px 2px rgba(16,24,40,.04);
-            border-left: 4px solid var(--brand);
-        }
+        .kpi { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; height: 100%; box-shadow: 0 1px 2px rgba(16,24,40,.04); border-left: 4px solid var(--brand); }
         .kpi.k-pago { border-left-color: var(--ok); }
         .kpi.k-risco { border-left-color: var(--warn); }
         .kpi.k-perdido { border-left-color: var(--danger); }
@@ -68,10 +54,7 @@
         .kpi .k-value { font-size: 22px; font-weight: 700; margin-top: 6px; word-break: break-word; }
 
         /* ===== Panels ===== */
-        .panel {
-            background: var(--card); border: 1px solid var(--line); border-radius: 14px;
-            padding: 18px; box-shadow: 0 1px 2px rgba(16,24,40,.04);
-        }
+        .panel { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px; box-shadow: 0 1px 2px rgba(16,24,40,.04); }
         .chart-box { position: relative; height: 260px; }
 
         /* ===== Table (desktop) ===== */
@@ -93,19 +76,35 @@
         .cc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; font-size: 13px; }
         .cc-grid .lbl { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .02em; display: block; }
 
-        /* ===== Search ===== */
-        .search-wrap { position: relative; max-width: 420px; }
+        /* ===== Toolbar / filtros ===== */
+        .toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; margin-bottom: 12px; }
+        .toolbar .grp { display: flex; flex-direction: column; }
+        .toolbar .grp label { font-size: 11px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .02em; margin-bottom: 3px; }
+        .search-wrap { position: relative; }
         .search-wrap i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); }
-        .search-wrap input { padding-left: 36px; border-radius: 10px; border-color: var(--line); }
-        .search-wrap input:focus { border-color: var(--brand); box-shadow: 0 0 0 .2rem rgba(29,75,143,.12); }
-        .no-results { display: none; color: var(--muted); padding: 18px; text-align: center; }
+        .search-wrap input { padding-left: 36px; }
+        .form-check-toolbar { background: #fafbfd; border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; height: 38px; display: flex; align-items: center; }
+        .chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 4px 0 14px; }
+        .chip { background: var(--brand-soft); color: var(--brand); border-radius: 20px; font-size: 12px; font-weight: 600; padding: .3em .7em; display: inline-flex; align-items: center; gap: 6px; }
+        .chip button { border: 0; background: transparent; color: var(--brand); line-height: 1; padding: 0; cursor: pointer; font-size: 14px; }
+        .contador { color: var(--muted); font-size: 13px; }
+        .btn-limpar { font-size: 12px; color: var(--danger); text-decoration: none; font-weight: 600; }
+        .no-results { display: none; color: var(--muted); padding: 24px; text-align: center; }
 
-        /* Instituição chip */
+        /* ===== Paginação ===== */
+        .paginacao { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; margin-top: 16px; }
+        .paginacao button { border: 1px solid var(--line); background: var(--card); color: var(--ink); border-radius: 8px; min-width: 38px; height: 38px; padding: 0 10px; cursor: pointer; font-size: 14px; }
+        .paginacao button:hover:not(:disabled) { background: var(--brand-soft); border-color: var(--brand); }
+        .paginacao button.ativa { background: var(--brand); border-color: var(--brand); color: #fff; font-weight: 700; }
+        .paginacao button:disabled { opacity: .45; cursor: default; }
+
         .inst-chip { font-size: 11px; font-weight: 600; padding: .25em .55em; border-radius: 6px; background: var(--brand-soft); color: var(--brand); }
 
         @media (max-width: 575px) {
             .cc-grid { grid-template-columns: 1fr; }
             .page { padding: 20px 14px 56px; }
+            .toolbar .grp, .toolbar .grp .form-select, .toolbar .grp .search-wrap, .toolbar .grp input { width: 100%; }
+            .toolbar { flex-direction: column; align-items: stretch; }
         }
     </style>
 </head>
@@ -139,29 +138,29 @@
         <div class="page-title">Portal de Gestão Orçamentária</div>
         <div class="page-sub">Visão executiva — <b>{{ nome_cidade }}</b></div>
 
-        {% if totais and totais.obras > 0 %}
+        {% if total_obras > 0 %}
 
             <!-- KPIs -->
             <div class="row row-cols-2 row-cols-lg-5 g-3 mb-4">
                 <div class="col"><div class="kpi">
-                    <div class="k-top"><span class="k-label">Total de Obras</span><i class="bi bi-buildings k-icon"></i></div>
-                    <div class="k-value">{{ totais.obras }}</div>
+                    <div class="k-top"><span class="k-label">Obras (filtro)</span><i class="bi bi-buildings k-icon"></i></div>
+                    <div class="k-value" id="kpiObras">—</div>
                 </div></div>
                 <div class="col"><div class="kpi">
                     <div class="k-top"><span class="k-label">Valor Alocado</span><i class="bi bi-cash-stack k-icon"></i></div>
-                    <div class="k-value">{{ totais.alocado }}</div>
+                    <div class="k-value" id="kpiAlocado">—</div>
                 </div></div>
                 <div class="col"><div class="kpi k-pago">
                     <div class="k-top"><span class="k-label">Valor Pago</span><i class="bi bi-check2-circle k-icon"></i></div>
-                    <div class="k-value">{{ totais.pago }}</div>
+                    <div class="k-value" id="kpiPago">—</div>
                 </div></div>
                 <div class="col"><div class="kpi k-risco">
                     <div class="k-top"><span class="k-label">Saldo em Risco</span><i class="bi bi-exclamation-triangle k-icon"></i></div>
-                    <div class="k-value">{{ totais.risco }}</div>
+                    <div class="k-value" id="kpiRisco">—</div>
                 </div></div>
                 <div class="col"><div class="kpi k-perdido">
                     <div class="k-top"><span class="k-label">Dinheiro Perdido</span><i class="bi bi-x-octagon k-icon"></i></div>
-                    <div class="k-value">{{ totais.perdido }}</div>
+                    <div class="k-value" id="kpiPerdido">—</div>
                 </div></div>
             </div>
 
@@ -179,17 +178,65 @@
 
             <!-- CONVÊNIOS -->
             <div class="panel mb-4">
-                <div class="d-flex flex-column flex-md-row md-align-items-center justify-content-between gap-2 mb-3">
-                    <div class="section-title mb-0"><i class="bi bi-folder2-open"></i> Portfólio de Convênios</div>
-                    <div class="search-wrap w-100" style="max-width:420px;">
-                        <i class="bi bi-search"></i>
-                        <input type="text" id="buscaConvenio" class="form-control" placeholder="Buscar por obra ou entidade...">
+                <div class="section-title"><i class="bi bi-folder2-open"></i> Portfólio de Convênios</div>
+
+                <!-- Toolbar -->
+                <div class="toolbar">
+                    <div class="grp" style="flex:1 1 260px;">
+                        <label for="buscaConvenio">Buscar</label>
+                        <div class="search-wrap">
+                            <i class="bi bi-search"></i>
+                            <input type="text" id="buscaConvenio" class="form-control" placeholder="Obra ou entidade...">
+                        </div>
+                    </div>
+                    <div class="grp">
+                        <label for="filtroStatus">Status</label>
+                        <select id="filtroStatus" class="form-select">
+                            <option value="">Todos</option>
+                            <option value="ativo">Ativo</option>
+                            <option value="vencido">Vencido</option>
+                            <option value="indef">Indefinido</option>
+                        </select>
+                    </div>
+                    <div class="grp">
+                        <label for="ordenacao">Ordenar por</label>
+                        <select id="ordenacao" class="form-select">
+                            <option value="saldo_desc">Maior saldo</option>
+                            <option value="valor_desc">Maior valor</option>
+                            <option value="pago_desc">Maior pago</option>
+                            <option value="venc_asc">Vencimento (mais próximo)</option>
+                        </select>
+                    </div>
+                    <div class="grp">
+                        <label>&nbsp;</label>
+                        <div class="form-check-toolbar">
+                            <input class="form-check-input me-2 mt-0" type="checkbox" id="filtroPago0">
+                            <label class="form-check-label small" for="filtroPago0">Pago = 0</label>
+                        </div>
+                    </div>
+                    <div class="grp">
+                        <label>&nbsp;</label>
+                        <div class="form-check-toolbar">
+                            <input class="form-check-input me-2 mt-0" type="checkbox" id="filtroVencendo">
+                            <label class="form-check-label small" for="filtroVencendo">Vencendo em 90d</label>
+                        </div>
+                    </div>
+                    <div class="grp">
+                        <label>&nbsp;</label>
+                        <button id="btnExport" class="btn btn-outline-primary"><i class="bi bi-download me-1"></i>CSV</button>
                     </div>
                 </div>
 
+                <!-- Contador + chips -->
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                    <span class="contador" id="contador"></span>
+                    <a href="#" class="btn-limpar" id="btnLimpar" style="display:none;"><i class="bi bi-x-circle me-1"></i>Limpar filtros</a>
+                </div>
+                <div class="chips" id="chips"></div>
+
                 <!-- Desktop: tabela -->
                 <div class="table-responsive d-none d-lg-block">
-                    <table class="table align-middle">
+                    <table class="table align-middle mb-0">
                         <thead>
                             <tr>
                                 <th>Nº</th><th>Obra</th><th>Entidade</th>
@@ -197,48 +244,15 @@
                                 <th class="text-end">Saldo</th><th>Vencimento</th><th>Status</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            {% for linha in detalhes %}
-                            <tr class="filtravel" data-busca="{{ (linha['Descrição da Obra'] or '')|lower }} {{ (linha['Entidade Beneficiada'] or '')|lower }}">
-                                <td class="num">{{ linha['Nº Convênio'] }}</td>
-                                <td>{{ linha['Descrição da Obra'] }}</td>
-                                <td>{{ linha['Entidade Beneficiada'] }}</td>
-                                <td class="num text-end">{{ linha['Valor Total'] }}</td>
-                                <td class="num text-end">{{ linha['Valor Pago'] }}</td>
-                                <td class="num text-end">{{ linha['Saldo Restante'] }}</td>
-                                <td class="num">{{ linha['Vencimento'] }}</td>
-                                <td>
-                                    {% if 'Ativo' in linha['Status Vigência'] %}<span class="badge-status s-ativo">Ativo</span>
-                                    {% elif 'Vencido' in linha['Status Vigência'] %}<span class="badge-status s-vencido">Vencido</span>
-                                    {% else %}<span class="badge-status s-indef">Indefinido</span>{% endif %}
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
+                        <tbody id="convTbody"></tbody>
                     </table>
                 </div>
 
-                <!-- Mobile: cartões empilhados -->
-                <div class="d-lg-none">
-                    {% for linha in detalhes %}
-                    <div class="conv-card filtravel" data-busca="{{ (linha['Descrição da Obra'] or '')|lower }} {{ (linha['Entidade Beneficiada'] or '')|lower }}">
-                        <div class="d-flex justify-content-between align-items-start gap-2">
-                            <div class="cc-obra">{{ linha['Descrição da Obra'] }}</div>
-                            {% if 'Ativo' in linha['Status Vigência'] %}<span class="badge-status s-ativo">Ativo</span>
-                            {% elif 'Vencido' in linha['Status Vigência'] %}<span class="badge-status s-vencido">Vencido</span>
-                            {% else %}<span class="badge-status s-indef">Indefinido</span>{% endif %}
-                        </div>
-                        <div class="cc-ent">{{ linha['Entidade Beneficiada'] }}</div>
-                        <div class="cc-grid">
-                            <div><span class="lbl">Valor Total</span><span class="num">{{ linha['Valor Total'] }}</span></div>
-                            <div><span class="lbl">Pago</span><span class="num">{{ linha['Valor Pago'] }}</span></div>
-                            <div><span class="lbl">Saldo</span><span class="num">{{ linha['Saldo Restante'] }}</span></div>
-                            <div><span class="lbl">Vencimento</span><span class="num">{{ linha['Vencimento'] or '—' }}</span></div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-                <div class="no-results" id="semConvenios">Nenhum convênio encontrado para a busca.</div>
+                <!-- Mobile: cartões -->
+                <div class="d-lg-none" id="convCards"></div>
+
+                <div class="no-results" id="semConvenios">Nenhum convênio encontrado para os filtros aplicados.</div>
+                <div class="paginacao" id="paginacao"></div>
             </div>
 
             <!-- SICONFI -->
@@ -246,7 +260,6 @@
                 <div class="section-title"><i class="bi bi-bank2"></i> Conformidade Fiscal (Siconfi)</div>
 
                 {% if siconfi %}
-                    <!-- Desktop -->
                     <div class="table-responsive d-none d-lg-block">
                         <table class="table align-middle">
                             <thead>
@@ -265,7 +278,6 @@
                             </tbody>
                         </table>
                     </div>
-                    <!-- Mobile -->
                     <div class="d-lg-none">
                         {% for e in siconfi %}
                         <div class="conv-card">
@@ -295,58 +307,233 @@
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script>
-        // ===== Busca/filtro de convênios (tabela + cartões) =====
-        (function () {
-            const input = document.getElementById('buscaConvenio');
-            if (!input) return;
-            const itens = document.querySelectorAll('.filtravel');
-            const aviso = document.getElementById('semConvenios');
-            input.addEventListener('input', function () {
-                const q = this.value.trim().toLowerCase();
-                let visiveis = 0;
-                itens.forEach(el => {
-                    const match = el.dataset.busca.includes(q);
-                    el.style.display = match ? '' : 'none';
-                    if (match) visiveis++;
-                });
-                // itens conta tabela + cartões (mesmos dados duplicados); >0 = há resultado
-                if (aviso) aviso.style.display = visiveis === 0 ? 'block' : 'none';
+    (function () {
+        const CONVENIOS = {{ convenios | tojson }};
+        const tbody = document.getElementById('convTbody');
+        if (!tbody) return;  // cidade sem dados
+
+        const PAGE_SIZE = 50;
+        const STATUS_LABEL = { ativo: 'Ativo', vencido: 'Vencido', indef: 'Indefinido' };
+        const STATUS_CLASS = { ativo: 's-ativo', vencido: 's-vencido', indef: 's-indef' };
+
+        const state = { busca: '', status: '', pagoZero: false, vencendo: false, ordenacao: 'saldo_desc', pagina: 1 };
+        let filtrados = [];
+
+        const fmtBRL = v => 'R$ ' + Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const fmtBRLk = v => 'R$ ' + Number(v || 0).toLocaleString('pt-BR', { maximumFractionDigits: 0 });
+        const fmtData = d => d ? d.split('-').reverse().join('/') : '—';
+        const esc = s => (s == null ? '' : String(s)).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+        // ----- janela de "vencendo em 90 dias" -----
+        function venceEmBreve(c) {
+            if (c.status !== 'ativo' || !c.venc) return false;
+            const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+            const limite = new Date(hoje); limite.setDate(limite.getDate() + 90);
+            const d = new Date(c.venc + 'T00:00:00');
+            return d >= hoje && d <= limite;
+        }
+
+        // ----- filtro + ordenação -----
+        function calcular() {
+            const q = state.busca.trim().toLowerCase();
+            filtrados = CONVENIOS.filter(c => {
+                if (q && !((c.obra || '').toLowerCase().includes(q) || (c.entidade || '').toLowerCase().includes(q))) return false;
+                if (state.status && c.status !== state.status) return false;
+                if (state.pagoZero && c.pago !== 0) return false;
+                if (state.vencendo && !venceEmBreve(c)) return false;
+                return true;
             });
-        })();
-
-        // ===== Gráficos =====
-        {% if grafico %}
-        const G = {{ grafico | tojson }};
-        const fmtBRL = v => 'R$ ' + Number(v).toLocaleString('pt-BR', {maximumFractionDigits: 0});
-
-        new Chart(document.getElementById('chartExec'), {
-            type: 'doughnut',
-            data: {
-                labels: ['Pago', 'Saldo em Risco', 'Perdido'],
-                datasets: [{ data: [G.pago, G.risco, G.perdido], backgroundColor: ['#1f9d55', '#d98a00', '#d23b3b'], borderWidth: 0 }]
-            },
-            options: {
-                responsive: true, maintainAspectRatio: false, cutout: '62%',
-                plugins: {
-                    legend: { position: 'bottom' },
-                    tooltip: { callbacks: { label: c => c.label + ': ' + fmtBRL(c.parsed) } }
+            const ord = state.ordenacao;
+            filtrados.sort((a, b) => {
+                if (ord === 'valor_desc') return b.valor - a.valor;
+                if (ord === 'pago_desc') return b.pago - a.pago;
+                if (ord === 'venc_asc') {
+                    if (!a.venc) return 1; if (!b.venc) return -1;
+                    return a.venc < b.venc ? -1 : a.venc > b.venc ? 1 : 0;
                 }
+                return b.saldo - a.saldo; // saldo_desc (padrão)
+            });
+        }
+
+        // ----- KPIs + gráficos a partir do conjunto filtrado -----
+        let chartExec, chartStatus;
+        function atualizarKpisEGraficos() {
+            let alocado = 0, pago = 0, risco = 0, perdido = 0, a = 0, v = 0, i = 0;
+            filtrados.forEach(c => {
+                alocado += c.valor; pago += c.pago;
+                if (c.status === 'ativo') { risco += c.saldo; a++; }
+                else if (c.status === 'vencido') { perdido += c.saldo; v++; }
+                else { i++; }
+            });
+            document.getElementById('kpiObras').textContent = filtrados.length;
+            document.getElementById('kpiAlocado').textContent = fmtBRL(alocado);
+            document.getElementById('kpiPago').textContent = fmtBRL(pago);
+            document.getElementById('kpiRisco').textContent = fmtBRL(risco);
+            document.getElementById('kpiPerdido').textContent = fmtBRL(perdido);
+
+            chartExec.data.datasets[0].data = [pago, risco, perdido];
+            chartExec.update();
+            chartStatus.data.datasets[0].data = [a, v, i];
+            chartStatus.update();
+        }
+
+        // ----- render da página -----
+        function badge(status) {
+            return `<span class="badge-status ${STATUS_CLASS[status]}">${STATUS_LABEL[status]}</span>`;
+        }
+        function renderPagina() {
+            const totalPaginas = Math.max(1, Math.ceil(filtrados.length / PAGE_SIZE));
+            if (state.pagina > totalPaginas) state.pagina = totalPaginas;
+            const ini = (state.pagina - 1) * PAGE_SIZE;
+            const pagina = filtrados.slice(ini, ini + PAGE_SIZE);
+
+            document.getElementById('semConvenios').style.display = filtrados.length ? 'none' : 'block';
+
+            tbody.innerHTML = pagina.map(c => `
+                <tr>
+                    <td class="num">${esc(c.n)}</td>
+                    <td>${esc(c.obra)}</td>
+                    <td>${esc(c.entidade)}</td>
+                    <td class="num text-end">${fmtBRL(c.valor)}</td>
+                    <td class="num text-end">${fmtBRL(c.pago)}</td>
+                    <td class="num text-end">${fmtBRL(c.saldo)}</td>
+                    <td class="num">${fmtData(c.venc)}</td>
+                    <td>${badge(c.status)}</td>
+                </tr>`).join('');
+
+            document.getElementById('convCards').innerHTML = pagina.map(c => `
+                <div class="conv-card">
+                    <div class="d-flex justify-content-between align-items-start gap-2">
+                        <div class="cc-obra">${esc(c.obra)}</div>${badge(c.status)}
+                    </div>
+                    <div class="cc-ent">${esc(c.entidade)}</div>
+                    <div class="cc-grid">
+                        <div><span class="lbl">Valor Total</span><span class="num">${fmtBRL(c.valor)}</span></div>
+                        <div><span class="lbl">Pago</span><span class="num">${fmtBRL(c.pago)}</span></div>
+                        <div><span class="lbl">Saldo</span><span class="num">${fmtBRL(c.saldo)}</span></div>
+                        <div><span class="lbl">Vencimento</span><span class="num">${fmtData(c.venc)}</span></div>
+                    </div>
+                </div>`).join('');
+
+            renderPaginacao(totalPaginas);
+            renderContador(ini, pagina.length);
+        }
+
+        // ----- contador + chips -----
+        function renderContador(ini, qtdNaPagina) {
+            const total = filtrados.length;
+            const txt = total ? `Exibindo ${ini + 1}–${ini + qtdNaPagina} de ${total}` : 'Nenhum convênio';
+            document.getElementById('contador').textContent = `${txt} · total da cidade: ${CONVENIOS.length}`;
+
+            const chips = [];
+            if (state.busca.trim()) chips.push(['busca', `Busca: "${state.busca.trim()}"`]);
+            if (state.status) chips.push(['status', `Status: ${STATUS_LABEL[state.status]}`]);
+            if (state.pagoZero) chips.push(['pagoZero', 'Pago = 0']);
+            if (state.vencendo) chips.push(['vencendo', 'Vencendo em 90 dias']);
+            const box = document.getElementById('chips');
+            box.innerHTML = chips.map(([k, label]) => `<span class="chip">${esc(label)} <button data-chip="${k}" title="Remover">&times;</button></span>`).join('');
+            document.getElementById('btnLimpar').style.display = chips.length ? '' : 'none';
+        }
+
+        // ----- paginação -----
+        function renderPaginacao(totalPaginas) {
+            const box = document.getElementById('paginacao');
+            if (totalPaginas <= 1) { box.innerHTML = ''; return; }
+            const p = state.pagina;
+            let nums = [];
+            const win = 2;
+            for (let n = 1; n <= totalPaginas; n++) {
+                if (n === 1 || n === totalPaginas || (n >= p - win && n <= p + win)) nums.push(n);
+                else if (nums[nums.length - 1] !== '…') nums.push('…');
             }
+            let html = `<button data-pag="prev" ${p === 1 ? 'disabled' : ''}>‹</button>`;
+            html += nums.map(n => n === '…'
+                ? `<button disabled>…</button>`
+                : `<button data-pag="${n}" class="${n === p ? 'ativa' : ''}">${n}</button>`).join('');
+            html += `<button data-pag="next" ${p === totalPaginas ? 'disabled' : ''}>›</button>`;
+            box.innerHTML = html;
+        }
+
+        // ----- recalcula tudo -----
+        function aplicar(resetPagina = true) {
+            if (resetPagina) state.pagina = 1;
+            calcular();
+            atualizarKpisEGraficos();
+            renderPagina();
+        }
+
+        // ----- export CSV (conjunto filtrado inteiro) -----
+        function exportarCSV() {
+            const cab = ['Nº', 'Obra', 'Entidade', 'Valor Total', 'Valor Pago', 'Saldo', 'Vencimento', 'Status'];
+            const cell = v => `"${String(v == null ? '' : v).replace(/"/g, '""')}"`;
+            const money = n => Number(n || 0).toFixed(2).replace('.', ',');
+            const linhas = filtrados.map(c => [
+                c.n, c.obra, c.entidade, money(c.valor), money(c.pago), money(c.saldo),
+                fmtData(c.venc), STATUS_LABEL[c.status]
+            ].map(cell).join(';'));
+            const csv = '﻿' + [cab.map(cell).join(';'), ...linhas].join('\r\n');
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = 'convenios.csv';
+            document.body.appendChild(a); a.click(); a.remove();
+            URL.revokeObjectURL(url);
+        }
+
+        // ----- gráficos (criados uma vez) -----
+        chartExec = new Chart(document.getElementById('chartExec'), {
+            type: 'doughnut',
+            data: { labels: ['Pago', 'Saldo em Risco', 'Perdido'], datasets: [{ data: [0, 0, 0], backgroundColor: ['#1f9d55', '#d98a00', '#d23b3b'], borderWidth: 0 }] },
+            options: { responsive: true, maintainAspectRatio: false, cutout: '62%', plugins: { legend: { position: 'bottom' }, tooltip: { callbacks: { label: c => c.label + ': ' + fmtBRLk(c.parsed) } } } }
+        });
+        chartStatus = new Chart(document.getElementById('chartStatus'), {
+            type: 'bar',
+            data: { labels: ['Ativos', 'Vencidos', 'Indefinidos'], datasets: [{ data: [0, 0, 0], backgroundColor: ['#1f9d55', '#d23b3b', '#9aa3ad'], borderRadius: 6 }] },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
         });
 
-        new Chart(document.getElementById('chartStatus'), {
-            type: 'bar',
-            data: {
-                labels: ['Ativos', 'Vencidos', 'Indefinidos'],
-                datasets: [{ data: [G.ativos, G.vencidos, G.indefinidos], backgroundColor: ['#1f9d55', '#d23b3b', '#9aa3ad'], borderRadius: 6 }]
-            },
-            options: {
-                responsive: true, maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
-            }
+        // ----- listeners -----
+        document.getElementById('buscaConvenio').addEventListener('input', e => { state.busca = e.target.value; aplicar(); });
+        document.getElementById('filtroStatus').addEventListener('change', e => { state.status = e.target.value; aplicar(); });
+        document.getElementById('ordenacao').addEventListener('change', e => { state.ordenacao = e.target.value; aplicar(false); });
+        document.getElementById('filtroPago0').addEventListener('change', e => { state.pagoZero = e.target.checked; aplicar(); });
+        document.getElementById('filtroVencendo').addEventListener('change', e => { state.vencendo = e.target.checked; aplicar(); });
+        document.getElementById('btnExport').addEventListener('click', exportarCSV);
+
+        document.getElementById('paginacao').addEventListener('click', e => {
+            const b = e.target.closest('button[data-pag]'); if (!b) return;
+            const v = b.dataset.pag;
+            const totalPaginas = Math.max(1, Math.ceil(filtrados.length / PAGE_SIZE));
+            if (v === 'prev') state.pagina = Math.max(1, state.pagina - 1);
+            else if (v === 'next') state.pagina = Math.min(totalPaginas, state.pagina + 1);
+            else state.pagina = parseInt(v, 10);
+            renderPagina();
+            window.scrollTo({ top: document.querySelector('.toolbar').offsetTop - 80, behavior: 'smooth' });
         });
-        {% endif %}
+
+        document.getElementById('chips').addEventListener('click', e => {
+            const b = e.target.closest('button[data-chip]'); if (!b) return;
+            const k = b.dataset.chip;
+            if (k === 'busca') { state.busca = ''; document.getElementById('buscaConvenio').value = ''; }
+            if (k === 'status') { state.status = ''; document.getElementById('filtroStatus').value = ''; }
+            if (k === 'pagoZero') { state.pagoZero = false; document.getElementById('filtroPago0').checked = false; }
+            if (k === 'vencendo') { state.vencendo = false; document.getElementById('filtroVencendo').checked = false; }
+            aplicar();
+        });
+
+        document.getElementById('btnLimpar').addEventListener('click', e => {
+            e.preventDefault();
+            state.busca = ''; state.status = ''; state.pagoZero = false; state.vencendo = false;
+            document.getElementById('buscaConvenio').value = '';
+            document.getElementById('filtroStatus').value = '';
+            document.getElementById('filtroPago0').checked = false;
+            document.getElementById('filtroVencendo').checked = false;
+            aplicar();
+        });
+
+        // primeira renderização
+        aplicar();
+    })();
     </script>
 </body>
 </html>
