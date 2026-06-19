@@ -101,6 +101,48 @@
 
         .inst-chip { font-size: 11px; font-weight: 600; padding: .25em .55em; border-radius: 6px; background: var(--brand-soft); color: var(--brand); }
 
+        /* ===== Badge de liberação ===== */
+        .lib-badge { font-size: 11px; font-weight: 600; padding: .3em .6em; border-radius: 20px; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+        .lib-aguardando { background: #fff4e0; color: var(--warn); }
+        .lib-parcial { background: #e6eefb; color: var(--brand); }
+        .lib-liberado { background: #e3f5ec; color: var(--ok); }
+        .lib-nd { background: #eef0f3; color: var(--muted); }
+
+        /* ===== Linhas/cards clicáveis ===== */
+        .conv-row, .conv-card { cursor: pointer; }
+        .conv-card { transition: border-color .12s, box-shadow .12s; }
+        .conv-card:hover { border-color: var(--brand); box-shadow: 0 2px 8px rgba(16,24,40,.08); }
+
+        /* ===== Detalhe (offcanvas lateral) ===== */
+        .det-backdrop { position: fixed; inset: 0; background: rgba(16,24,40,.45); z-index: 1040; opacity: 0; visibility: hidden; transition: opacity .2s; }
+        .det-backdrop.show { opacity: 1; visibility: visible; }
+        .det-panel { position: fixed; top: 0; right: 0; height: 100%; width: 460px; max-width: 100%; background: var(--card); z-index: 1050; box-shadow: -4px 0 24px rgba(16,24,40,.18); transform: translateX(100%); transition: transform .25s ease; display: flex; flex-direction: column; }
+        .det-panel.show { transform: translateX(0); }
+        .det-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 18px 20px; border-bottom: 1px solid var(--line); }
+        .det-head .det-num { font-size: 13px; color: var(--muted); font-weight: 600; }
+        .det-head .det-obj { font-size: 15px; font-weight: 700; margin-top: 2px; line-height: 1.3; }
+        .det-close { border: 0; background: transparent; color: var(--muted); font-size: 22px; line-height: 1; cursor: pointer; padding: 0 4px; }
+        .det-close:hover { color: var(--ink); }
+        .det-body { overflow-y: auto; padding: 18px 20px 28px; }
+        .det-sec { margin-bottom: 20px; }
+        .det-sec-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; color: var(--brand); margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+        .det-row { display: flex; justify-content: space-between; gap: 14px; padding: 6px 0; border-bottom: 1px dashed var(--line); font-size: 13.5px; }
+        .det-row:last-child { border-bottom: 0; }
+        .det-row .det-k { color: var(--muted); flex: 0 0 auto; }
+        .det-row .det-v { text-align: right; font-weight: 600; word-break: break-word; }
+        .det-v.num { font-variant-numeric: tabular-nums; }
+        /* caixa de liberação */
+        .lib-box { border: 1px solid var(--line); border-radius: 12px; padding: 14px; background: #fafbfd; }
+        .lib-box .lib-status { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 14px; margin-bottom: 4px; }
+        .lib-box .lib-bar { height: 8px; border-radius: 6px; background: #e6e9ef; overflow: hidden; margin: 10px 0 4px; }
+        .lib-box .lib-bar > span { display: block; height: 100%; background: var(--ok); }
+        .lib-box .lib-nums { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); }
+        .lib-box .lib-hint { font-size: 12px; color: var(--muted); margin-top: 10px; line-height: 1.45; }
+
+        @media (max-width: 575px) {
+            .det-panel { width: 100%; }
+        }
+
         /* ===== Botão voltar ao topo ===== */
         .btn-topo {
             position: fixed; right: 18px; bottom: 18px; z-index: 1030;
@@ -281,8 +323,8 @@
                         <thead>
                             <tr>
                                 <th>Nº</th><th>Obra</th><th>Entidade</th>
-                                <th class="text-end">Valor Total</th><th class="text-end">Pago</th>
-                                <th class="text-end">Saldo</th><th>Vencimento</th><th>Status</th>
+                                <th class="text-end">Valor Total</th><th class="text-end">Liberado</th>
+                                <th class="text-end">Saldo</th><th>Liberação</th><th>Vencimento</th><th>Status</th>
                             </tr>
                         </thead>
                         <tbody id="convTbody"></tbody>
@@ -346,6 +388,19 @@
         {% endif %}
     </div>
 
+    <!-- Detalhe do convênio (offcanvas lateral) -->
+    <div class="det-backdrop" id="detBackdrop"></div>
+    <aside class="det-panel" id="detPanel" role="dialog" aria-modal="true" aria-labelledby="detObj">
+        <div class="det-head">
+            <div>
+                <div class="det-num" id="detNum"></div>
+                <div class="det-obj" id="detObj"></div>
+            </div>
+            <button class="det-close" id="detClose" type="button" aria-label="Fechar">&times;</button>
+        </div>
+        <div class="det-body" id="detBody"></div>
+    </aside>
+
     <!-- Voltar ao topo -->
     <button id="btnTopo" class="btn-topo" type="button" aria-label="Voltar ao topo"><i class="bi bi-arrow-up"></i></button>
 
@@ -371,6 +426,20 @@
         function minChip(m) {
             if (!m) return '';
             return `<div class="min-chip" title="${esc(m)}"><i class="bi bi-bank2"></i>${esc(minCurto(m))}</div>`;
+        }
+
+        // ----- status de liberação (empenhado / liberado / a liberar) -----
+        // 'pago' = valorLiberado pela União. Define o quanto já saiu do Gov. Federal.
+        function liberacao(c) {
+            const valor = Number(c.valor || 0), pago = Number(c.pago || 0);
+            if (valor <= 0) return { key: 'nd', label: 'Sem valor informado', short: '—', cls: 'lib-nd', pct: 0 };
+            if (pago <= 0) return { key: 'aguardando', label: 'Aguardando liberação', short: 'Aguardando', cls: 'lib-aguardando', pct: 0 };
+            if (pago >= valor - 0.005) return { key: 'liberado', label: 'Totalmente liberado', short: 'Liberado', cls: 'lib-liberado', pct: 100 };
+            return { key: 'parcial', label: 'Parcialmente liberado', short: 'Parcial', cls: 'lib-parcial', pct: Math.min(100, pago / valor * 100) };
+        }
+        function libBadge(c) {
+            const l = liberacao(c);
+            return `<span class="lib-badge ${l.cls}">${l.short}</span>`;
         }
 
         // ----- janela de "vencendo em 90 dias" -----
@@ -449,30 +518,33 @@
             document.getElementById('semConvenios').style.display = filtrados.length ? 'none' : 'block';
 
             tbody.innerHTML = pagina.map(c => `
-                <tr>
+                <tr class="conv-row" data-id="${esc(c.id)}" tabindex="0" role="button" title="Ver detalhes">
                     <td class="num">${esc(c.n)}</td>
                     <td>${esc(c.obra)}${minChip(c.ministerio)}</td>
                     <td>${esc(c.entidade)}</td>
                     <td class="num text-end">${fmtBRL(c.valor)}</td>
                     <td class="num text-end">${fmtBRL(c.pago)}</td>
                     <td class="num text-end">${fmtBRL(c.saldo)}</td>
+                    <td>${libBadge(c)}</td>
                     <td class="num">${fmtData(c.venc)}</td>
                     <td>${badge(c.status)}</td>
                 </tr>`).join('');
 
             document.getElementById('convCards').innerHTML = pagina.map(c => `
-                <div class="conv-card">
+                <div class="conv-card" data-id="${esc(c.id)}" tabindex="0" role="button">
                     <div class="d-flex justify-content-between align-items-start gap-2">
                         <div class="cc-obra">${esc(c.obra)}</div>${badge(c.status)}
                     </div>
                     ${minChip(c.ministerio)}
                     <div class="cc-ent mt-1">${esc(c.entidade)}</div>
+                    <div class="d-flex flex-wrap gap-1 mb-2">${libBadge(c)}</div>
                     <div class="cc-grid">
                         <div><span class="lbl">Valor Total</span><span class="num">${fmtBRL(c.valor)}</span></div>
-                        <div><span class="lbl">Pago</span><span class="num">${fmtBRL(c.pago)}</span></div>
+                        <div><span class="lbl">Liberado</span><span class="num">${fmtBRL(c.pago)}</span></div>
                         <div><span class="lbl">Saldo</span><span class="num">${fmtBRL(c.saldo)}</span></div>
                         <div><span class="lbl">Vencimento</span><span class="num">${fmtData(c.venc)}</span></div>
                     </div>
+                    <div class="text-end mt-2"><span class="small text-primary">Ver detalhes <i class="bi bi-chevron-right"></i></span></div>
                 </div>`).join('');
 
             renderPaginacao(totalPaginas);
@@ -561,6 +633,83 @@
             });
         })();
 
+        // ----- detalhe do convênio (offcanvas) -----
+        function detRow(k, v, isHtml) {
+            const val = (v == null || v === '') ? '—' : v;
+            return `<div class="det-row"><span class="det-k">${k}</span><span class="det-v">${isHtml ? val : esc(val)}</span></div>`;
+        }
+        function detRowNum(k, v) {
+            return `<div class="det-row"><span class="det-k">${k}</span><span class="det-v num">${esc(v)}</span></div>`;
+        }
+        const LIB_HINT = {
+            aguardando: 'Nada foi liberado pela União ainda — o recurso segue com o Governo Federal (empenhado/reservado), não na conta do município.',
+            parcial: 'Parte do recurso já foi repassada pela União para a conta vinculada do convênio; o restante é liberado conforme a execução.',
+            liberado: 'O recurso já foi integralmente repassado pela União para a conta vinculada do convênio.',
+            nd: 'Sem valor informado para este convênio.'
+        };
+
+        function abrirDetalhe(c) {
+            const l = liberacao(c);
+            const aLiberar = Math.max(0, Number(c.valor || 0) - Number(c.pago || 0));
+            document.getElementById('detNum').textContent = `Convênio nº ${c.n || '—'}` + (c.codigo ? ` · cód. ${c.codigo}` : '');
+            document.getElementById('detObj').textContent = c.obra || 'Sem objeto informado';
+            const ultLib = c.ult_lib_data
+                ? ` Última liberação em ${fmtData(c.ult_lib_data)}${c.ult_lib_valor ? ' (' + fmtBRL(c.ult_lib_valor) + ')' : ''}.`
+                : '';
+
+            document.getElementById('detBody').innerHTML = `
+                <div class="det-sec">
+                    <div class="det-sec-title"><i class="bi bi-cash-coin"></i> Liberação de recursos</div>
+                    <div class="lib-box">
+                        <div class="lib-status"><span class="lib-badge ${l.cls}">${l.label}</span></div>
+                        <div class="lib-bar"><span style="width:${l.pct}%"></span></div>
+                        <div class="lib-nums"><span>Liberado: ${fmtBRL(c.pago)}</span><span>A liberar: ${fmtBRL(aLiberar)}</span></div>
+                        <div class="lib-hint">${LIB_HINT[l.key]} Valores liberados vão para uma conta vinculada bloqueada para o convênio, não para o caixa livre da prefeitura.${ultLib}</div>
+                    </div>
+                </div>
+                <div class="det-sec">
+                    <div class="det-sec-title"><i class="bi bi-wallet2"></i> Financeiro</div>
+                    ${detRowNum('Valor total', fmtBRL(c.valor))}
+                    ${detRowNum('Liberado pela União', fmtBRL(c.pago))}
+                    ${detRowNum('A liberar', fmtBRL(aLiberar))}
+                    ${detRowNum('Contrapartida', fmtBRL(c.contrapartida))}
+                </div>
+                <div class="det-sec">
+                    <div class="det-sec-title"><i class="bi bi-info-circle"></i> Identificação</div>
+                    ${detRow('Situação', c.situacao)}
+                    ${detRow('Tipo', c.tipo)}
+                    ${detRow('Nº do processo', c.processo)}
+                </div>
+                <div class="det-sec">
+                    <div class="det-sec-title"><i class="bi bi-people"></i> Partes</div>
+                    ${detRow('Ministério', c.ministerio)}
+                    ${detRow('Unidade gestora', c.ug)}
+                    ${detRow('Convenente', c.entidade)}
+                    ${detRow('CNPJ', c.entidade_cnpj)}
+                    ${detRow('Tipo de entidade', c.entidade_tipo)}
+                </div>
+                <div class="det-sec">
+                    <div class="det-sec-title"><i class="bi bi-calendar-event"></i> Vigência</div>
+                    ${detRow('Início', fmtData(c.inicio))}
+                    ${detRow('Fim', fmtData(c.venc))}
+                    ${detRow('Publicação', fmtData(c.publicacao))}
+                    ${detRow('Situação (vigência)', badge(c.status), true)}
+                </div>`;
+
+            document.getElementById('detPanel').classList.add('show');
+            document.getElementById('detBackdrop').classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
+        function fecharDetalhe() {
+            document.getElementById('detPanel').classList.remove('show');
+            document.getElementById('detBackdrop').classList.remove('show');
+            document.body.style.overflow = '';
+        }
+        function abrirPorId(id) {
+            const c = CONVENIOS.find(x => String(x.id) === String(id));
+            if (c) abrirDetalhe(c);
+        }
+
         // ----- listeners -----
         document.getElementById('buscaConvenio').addEventListener('input', e => { state.busca = e.target.value; aplicar(); });
         document.getElementById('filtroStatus').addEventListener('change', e => { state.status = e.target.value; aplicar(); });
@@ -614,6 +763,22 @@
             document.getElementById('filtroVencendo').checked = false;
             aplicar();
         });
+
+        // abrir detalhe ao clicar na linha (desktop) ou no card (mobile)
+        tbody.addEventListener('click', e => {
+            const r = e.target.closest('tr[data-id]'); if (r) abrirPorId(r.dataset.id);
+        });
+        tbody.addEventListener('keydown', e => {
+            if (e.key === 'Enter' || e.key === ' ') { const r = e.target.closest('tr[data-id]'); if (r) { e.preventDefault(); abrirPorId(r.dataset.id); } }
+        });
+        document.getElementById('convCards').addEventListener('click', e => {
+            const card = e.target.closest('.conv-card[data-id]'); if (card) abrirPorId(card.dataset.id);
+        });
+
+        // fechar detalhe
+        document.getElementById('detClose').addEventListener('click', fecharDetalhe);
+        document.getElementById('detBackdrop').addEventListener('click', fecharDetalhe);
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') fecharDetalhe(); });
 
         // primeira renderização
         aplicar();

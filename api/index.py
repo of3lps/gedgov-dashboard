@@ -79,14 +79,27 @@ def carregar_dados(codigo_ibge):
         # 1. CONVÊNIOS (dados numéricos crus — filtro/ordenação/KPIs ficam no cliente)
         query_convenios = """
             SELECT
+                payload->>'id' AS id,
                 payload->'dimConvenio'->>'numero' AS numero,
+                payload->'dimConvenio'->>'codigo' AS codigo,
                 payload->'dimConvenio'->>'objeto' AS objeto,
+                payload->>'situacao' AS situacao,
+                payload->'tipoInstrumento'->>'descricao' AS tipo_instrumento,
+                payload->>'numeroProcesso' AS processo,
                 payload->'convenente'->>'nome' AS entidade,
+                payload->'convenente'->>'cnpjFormatado' AS entidade_cnpj,
+                payload->'convenente'->>'tipo' AS entidade_tipo,
                 payload->'orgao'->'orgaoMaximo'->>'nome' AS ministerio,
+                payload->'unidadeGestora'->>'nome' AS unidade_gestora,
                 (payload->>'valor')::numeric AS valor,
                 (payload->>'valorLiberado')::numeric AS pago,
+                (payload->>'valorContrapartida')::numeric AS contrapartida,
+                (payload->>'valorDaUltimaLiberacao')::numeric AS ult_lib_valor,
+                payload->>'dataUltimaLiberacao' AS ult_lib_data,
                 GREATEST(((payload->>'valor')::numeric - (payload->>'valorLiberado')::numeric), 0) AS saldo,
+                payload->>'dataInicioVigencia' AS inicio,
                 payload->>'dataFinalVigencia' AS venc,
+                payload->>'dataPublicacao' AS publicacao,
                 CASE
                     WHEN payload->>'dataFinalVigencia' IS NULL THEN 'indef'
                     WHEN TO_DATE(payload->>'dataFinalVigencia', 'YYYY-MM-DD') >= CURRENT_DATE THEN 'ativo'
@@ -122,15 +135,28 @@ def carregar_dados(codigo_ibge):
         convenios = []
         for linha in convenios_brutos:
             convenios.append({
+                'id': linha['id'],
                 'n': linha['numero'],
+                'codigo': linha['codigo'],
                 'obra': linha['objeto'],
+                'situacao': linha['situacao'],
+                'tipo': linha['tipo_instrumento'],
+                'processo': linha['processo'],
                 'entidade': linha['entidade'],
+                'entidade_cnpj': linha['entidade_cnpj'],
+                'entidade_tipo': linha['entidade_tipo'],
                 'ministerio': linha['ministerio'],
+                'ug': linha['unidade_gestora'],
                 'valor': _num(linha['valor']),
                 'pago': _num(linha['pago']),
+                'contrapartida': _num(linha['contrapartida']),
+                'ult_lib_valor': _num(linha['ult_lib_valor']),
+                'ult_lib_data': linha['ult_lib_data'],
                 'saldo': _num(linha['saldo']),
-                'venc': linha['venc'],          # 'YYYY-MM-DD' ou None
-                'status': linha['status'],      # 'ativo' | 'vencido' | 'indef'
+                'inicio': linha['inicio'],       # 'YYYY-MM-DD' ou None
+                'venc': linha['venc'],           # 'YYYY-MM-DD' ou None
+                'publicacao': linha['publicacao'],
+                'status': linha['status'],       # 'ativo' | 'vencido' | 'indef'
             })
 
         # Entregas Siconfi com badge de status resolvido
