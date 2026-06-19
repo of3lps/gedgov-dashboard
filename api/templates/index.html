@@ -3,160 +3,350 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gedgov - BI Executivo</title>
+    <title>Gedgov — BI Executivo</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <style>
-        /* Paleta exata do Tema Escuro do Streamlit */
-        body { background-color: #0E1117; color: #FAFAFA; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; overflow-x: hidden; }
-        
-        /* Barra Lateral Desktop */
-        .sidebar { background-color: #262730; height: 100vh; position: fixed; padding: 2rem 1rem; width: 300px; z-index: 1000; overflow-y: auto;}
-        .main-content { margin-left: 300px; padding: 3rem; }
-        
-        /* Inputs e Cards */
-        .form-select { background-color: #0E1117; color: white; border: 1px solid #444; margin-top: 10px; }
-        .form-select:focus { background-color: #0E1117; color: white; box-shadow: none; border-color: #1D4B8F; }
-        .card-metric { background-color: #0E1117; border-radius: 8px; padding: 15px; box-shadow: 0px 2px 4px rgba(0,0,0,0.2); height: 100%; border: 1px solid #262730; }
-        
-        /* Tipografia */
-        .main-title { color: #1D4B8F; font-size: 32px; font-weight: bold; margin-bottom: 5px; }
-        .sub-title { color: #888; font-size: 16px; margin-bottom: 30px; }
-        .metric-label { font-size: 14px; color: #bbb; margin-bottom: 5px; }
-        .metric-value { font-size: 24px; font-weight: bold; color: #FAFAFA; }
-        
-        /* Tabela */
-        .table-dark { background-color: #0E1117; }
-        .table-dark th { background-color: #262730; color: #bbb; font-weight: 600; font-size: 14px; border-bottom: 2px solid #333; }
-        .table-dark td { font-size: 14px; border-bottom: 1px solid #333; vertical-align: middle; }
+        :root {
+            --brand: #1D4B8F;
+            --brand-soft: #e8eef7;
+            --accent: #F2C100;
+            --ok: #1f9d55;
+            --warn: #d98a00;
+            --danger: #d23b3b;
+            --bg: #f4f6fa;
+            --ink: #1f2933;
+            --muted: #6b7480;
+            --line: #e6e9ef;
+            --card: #ffffff;
+        }
+        * { box-sizing: border-box; }
+        body {
+            background-color: var(--bg);
+            color: var(--ink);
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
 
-        /* 📱 RESPONSIVIDADE PARA TELEMÓVEIS (A MÁGICA ACONTECE AQUI) */
-        @media (max-width: 768px) {
-            .sidebar {
-                position: relative;
-                width: 100%;
-                height: auto;
-                padding: 1.5rem;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                border-bottom: 2px solid #1D4B8F;
-            }
-            .sidebar label { width: 100%; text-align: left; }
-            .sidebar select { width: 100%; }
-            .main-content {
-                margin-left: 0;
-                padding: 1.5rem;
-            }
-            .main-title { font-size: 24px; }
-            .metric-value { font-size: 20px; }
-            .row > div { margin-bottom: 15px; } /* Espaçamento entre cartões no mobile */
+        /* ===== Top bar ===== */
+        .topbar {
+            background: var(--card);
+            border-bottom: 1px solid var(--line);
+            position: sticky; top: 0; z-index: 1020;
+            box-shadow: 0 1px 3px rgba(16,24,40,.04);
+        }
+        .topbar .brand { display: flex; align-items: center; gap: 12px; }
+        .topbar .brand img { max-height: 42px; object-fit: contain; }
+        .topbar .brand .name { font-weight: 700; color: var(--brand); font-size: 18px; line-height: 1; }
+        .topbar .brand .tag { font-size: 12px; color: var(--muted); }
+        .city-select { max-width: 280px; }
+        .form-select { border-color: var(--line); }
+        .form-select:focus { border-color: var(--brand); box-shadow: 0 0 0 .2rem rgba(29,75,143,.12); }
+
+        /* ===== Page ===== */
+        .page { max-width: 1240px; margin: 0 auto; padding: 28px 20px 64px; }
+        .page-title { font-size: 22px; font-weight: 700; margin-bottom: 2px; }
+        .page-sub { color: var(--muted); font-size: 14px; margin-bottom: 24px; }
+        .section-title { font-size: 16px; font-weight: 700; margin: 0 0 14px; display: flex; align-items: center; gap: 8px; }
+        .section-title i { color: var(--brand); }
+
+        /* ===== KPI cards ===== */
+        .kpi {
+            background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+            padding: 16px 18px; height: 100%;
+            box-shadow: 0 1px 2px rgba(16,24,40,.04);
+            border-left: 4px solid var(--brand);
+        }
+        .kpi.k-pago { border-left-color: var(--ok); }
+        .kpi.k-risco { border-left-color: var(--warn); }
+        .kpi.k-perdido { border-left-color: var(--danger); }
+        .kpi .k-top { display: flex; align-items: center; justify-content: space-between; }
+        .kpi .k-label { font-size: 13px; color: var(--muted); font-weight: 600; }
+        .kpi .k-icon { font-size: 18px; color: var(--brand); opacity: .85; }
+        .kpi.k-pago .k-icon { color: var(--ok); }
+        .kpi.k-risco .k-icon { color: var(--warn); }
+        .kpi.k-perdido .k-icon { color: var(--danger); }
+        .kpi .k-value { font-size: 22px; font-weight: 700; margin-top: 6px; word-break: break-word; }
+
+        /* ===== Panels ===== */
+        .panel {
+            background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+            padding: 18px; box-shadow: 0 1px 2px rgba(16,24,40,.04);
+        }
+        .chart-box { position: relative; height: 260px; }
+
+        /* ===== Table (desktop) ===== */
+        .table thead th { background: #fafbfd; color: var(--muted); font-size: 12.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .02em; border-bottom: 2px solid var(--line); }
+        .table td { font-size: 14px; vertical-align: middle; border-bottom: 1px solid var(--line); }
+        .table tbody tr:hover { background: var(--brand-soft); }
+        .num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+        /* ===== Status badges ===== */
+        .badge-status { font-size: 12px; font-weight: 600; padding: .35em .6em; border-radius: 20px; }
+        .s-ativo { background: #e3f5ec; color: var(--ok); }
+        .s-vencido { background: #fbe6e6; color: var(--danger); }
+        .s-indef { background: #eef0f3; color: var(--muted); }
+
+        /* ===== Convênio cards (mobile) ===== */
+        .conv-card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px; margin-bottom: 12px; }
+        .conv-card .cc-obra { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+        .conv-card .cc-ent { color: var(--muted); font-size: 13px; margin-bottom: 10px; }
+        .cc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; font-size: 13px; }
+        .cc-grid .lbl { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .02em; display: block; }
+
+        /* ===== Search ===== */
+        .search-wrap { position: relative; max-width: 420px; }
+        .search-wrap i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); }
+        .search-wrap input { padding-left: 36px; border-radius: 10px; border-color: var(--line); }
+        .search-wrap input:focus { border-color: var(--brand); box-shadow: 0 0 0 .2rem rgba(29,75,143,.12); }
+        .no-results { display: none; color: var(--muted); padding: 18px; text-align: center; }
+
+        /* Instituição chip */
+        .inst-chip { font-size: 11px; font-weight: 600; padding: .25em .55em; border-radius: 6px; background: var(--brand-soft); color: var(--brand); }
+
+        @media (max-width: 575px) {
+            .cc-grid { grid-template-columns: 1fr; }
+            .page { padding: 20px 14px 56px; }
         }
     </style>
 </head>
 <body>
 
-    <div class="sidebar">
-        <div class="text-center w-100 mb-4">
-            <img src="/static/logo.png" alt="Logo Gedgov" class="img-fluid" style="max-height: 80px; object-fit: contain;">
+    <!-- ===================== TOP BAR ===================== -->
+    <div class="topbar">
+        <div class="page" style="padding-top:12px; padding-bottom:12px;">
+            <div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3">
+                <div class="brand">
+                    <img src="/static/logo.png" alt="Logo Gedgov">
+                    <div>
+                        <div class="name">Gedgov</div>
+                        <div class="tag">BI Orçamentário Executivo</div>
+                    </div>
+                </div>
+                <div class="city-select w-100 w-sm-auto">
+                    <label for="cidadeSelect" class="form-label small text-secondary mb-1">Município ativo</label>
+                    <select id="cidadeSelect" class="form-select" onchange="window.location.href='/?ibge=' + this.value">
+                        {% for ibge, nome in cidades.items() %}
+                            <option value="{{ ibge }}" {% if ibge == ibge_atual %}selected{% endif %}>{{ nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
         </div>
-        
-        <label for="cidadeSelect" style="font-size: 14px; font-weight: 600; color: #FAFAFA;">Município Ativo:</label>
-        <select id="cidadeSelect" class="form-select" onchange="window.location.href='/?ibge=' + this.value">
-            {% for ibge, nome in cidades.items() %}
-                <option value="{{ ibge }}" {% if ibge == ibge_atual %}selected{% endif %}>{{ nome }}</option>
-            {% endfor %}
-        </select>
     </div>
 
-    <div class="main-content">
-        <div class="main-title">📊 Portal de Gestão Orçamentária Executiva</div>
-        <div class="sub-title">Visualização ativa para o cliente: <b>{{ nome_cidade }}</b></div>
+    <!-- ===================== CONTENT ===================== -->
+    <div class="page">
+        <div class="page-title">Portal de Gestão Orçamentária</div>
+        <div class="page-sub">Visão executiva — <b>{{ nome_cidade }}</b></div>
 
         {% if totais and totais.obras > 0 %}
-            
-            <div class="row row-cols-1 row-cols-md-3 row-cols-xl-5 g-3 mb-5">
-                <div class="col"><div class="card-metric"><div class="metric-label">Total de Obras</div><div class="metric-value">{{ totais.obras }}</div></div></div>
-                <div class="col"><div class="card-metric"><div class="metric-label">Valor Alocado</div><div class="metric-value">{{ totais.alocado }}</div></div></div>
-                <div class="col"><div class="card-metric"><div class="metric-label">Valor Pago</div><div class="metric-value">{{ totais.pago }}</div></div></div>
-                <div class="col"><div class="card-metric"><div class="metric-label">⚠️ Saldo em Risco (Ativo)</div><div class="metric-value">{{ totais.risco }}</div></div></div>
-                <div class="col"><div class="card-metric"><div class="metric-label">❌ Dinheiro Perdido</div><div class="metric-value">{{ totais.perdido }}</div></div></div>
+
+            <!-- KPIs -->
+            <div class="row row-cols-2 row-cols-lg-5 g-3 mb-4">
+                <div class="col"><div class="kpi">
+                    <div class="k-top"><span class="k-label">Total de Obras</span><i class="bi bi-buildings k-icon"></i></div>
+                    <div class="k-value">{{ totais.obras }}</div>
+                </div></div>
+                <div class="col"><div class="kpi">
+                    <div class="k-top"><span class="k-label">Valor Alocado</span><i class="bi bi-cash-stack k-icon"></i></div>
+                    <div class="k-value">{{ totais.alocado }}</div>
+                </div></div>
+                <div class="col"><div class="kpi k-pago">
+                    <div class="k-top"><span class="k-label">Valor Pago</span><i class="bi bi-check2-circle k-icon"></i></div>
+                    <div class="k-value">{{ totais.pago }}</div>
+                </div></div>
+                <div class="col"><div class="kpi k-risco">
+                    <div class="k-top"><span class="k-label">Saldo em Risco</span><i class="bi bi-exclamation-triangle k-icon"></i></div>
+                    <div class="k-value">{{ totais.risco }}</div>
+                </div></div>
+                <div class="col"><div class="kpi k-perdido">
+                    <div class="k-top"><span class="k-label">Dinheiro Perdido</span><i class="bi bi-x-octagon k-icon"></i></div>
+                    <div class="k-value">{{ totais.perdido }}</div>
+                </div></div>
             </div>
 
-            <hr style="border-color: #333;" class="mb-4">
-            <h4 class="mb-4">📋 Portfólio de Convênios e Projetos</h4>
+            <!-- CHARTS -->
+            <div class="row g-3 mb-4">
+                <div class="col-12 col-lg-6"><div class="panel">
+                    <div class="section-title"><i class="bi bi-pie-chart-fill"></i> Execução Financeira</div>
+                    <div class="chart-box"><canvas id="chartExec"></canvas></div>
+                </div></div>
+                <div class="col-12 col-lg-6"><div class="panel">
+                    <div class="section-title"><i class="bi bi-bar-chart-fill"></i> Convênios por Vigência</div>
+                    <div class="chart-box"><canvas id="chartStatus"></canvas></div>
+                </div></div>
+            </div>
 
-            <div class="table-responsive">
-                <table class="table table-dark table-hover">
-                    <thead>
-                        <tr>
-                            <th>Nº Convênio</th>
-                            <th>Descrição da Obra</th>
-                            <th>Entidade Beneficiada</th>
-                            <th>Valor Total</th>
-                            <th>Valor Pago</th>
-                            <th>Saldo Restante</th>
-                            <th>Vencimento</th>
-                            <th>Status Vigência</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for linha in detalhes %}
-                        <tr>
-                            <td>{{ linha['Nº Convênio'] }}</td>
-                            <td>{{ linha['Descrição da Obra'] }}</td>
-                            <td>{{ linha['Entidade Beneficiada'] }}</td>
-                            <td>{{ linha['Valor Total'] }}</td>
-                            <td>{{ linha['Valor Pago'] }}</td>
-                            <td>{{ linha['Saldo Restante'] }}</td>
-                            <td>{{ linha['Vencimento'] }}</td>
-                            <td>{{ linha['Status Vigência'] }}</td>
-                        </tr>
+            <!-- CONVÊNIOS -->
+            <div class="panel mb-4">
+                <div class="d-flex flex-column flex-md-row md-align-items-center justify-content-between gap-2 mb-3">
+                    <div class="section-title mb-0"><i class="bi bi-folder2-open"></i> Portfólio de Convênios</div>
+                    <div class="search-wrap w-100" style="max-width:420px;">
+                        <i class="bi bi-search"></i>
+                        <input type="text" id="buscaConvenio" class="form-control" placeholder="Buscar por obra ou entidade...">
+                    </div>
+                </div>
+
+                <!-- Desktop: tabela -->
+                <div class="table-responsive d-none d-lg-block">
+                    <table class="table align-middle">
+                        <thead>
+                            <tr>
+                                <th>Nº</th><th>Obra</th><th>Entidade</th>
+                                <th class="text-end">Valor Total</th><th class="text-end">Pago</th>
+                                <th class="text-end">Saldo</th><th>Vencimento</th><th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for linha in detalhes %}
+                            <tr class="filtravel" data-busca="{{ (linha['Descrição da Obra'] or '')|lower }} {{ (linha['Entidade Beneficiada'] or '')|lower }}">
+                                <td class="num">{{ linha['Nº Convênio'] }}</td>
+                                <td>{{ linha['Descrição da Obra'] }}</td>
+                                <td>{{ linha['Entidade Beneficiada'] }}</td>
+                                <td class="num text-end">{{ linha['Valor Total'] }}</td>
+                                <td class="num text-end">{{ linha['Valor Pago'] }}</td>
+                                <td class="num text-end">{{ linha['Saldo Restante'] }}</td>
+                                <td class="num">{{ linha['Vencimento'] }}</td>
+                                <td>
+                                    {% if 'Ativo' in linha['Status Vigência'] %}<span class="badge-status s-ativo">Ativo</span>
+                                    {% elif 'Vencido' in linha['Status Vigência'] %}<span class="badge-status s-vencido">Vencido</span>
+                                    {% else %}<span class="badge-status s-indef">Indefinido</span>{% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Mobile: cartões empilhados -->
+                <div class="d-lg-none">
+                    {% for linha in detalhes %}
+                    <div class="conv-card filtravel" data-busca="{{ (linha['Descrição da Obra'] or '')|lower }} {{ (linha['Entidade Beneficiada'] or '')|lower }}">
+                        <div class="d-flex justify-content-between align-items-start gap-2">
+                            <div class="cc-obra">{{ linha['Descrição da Obra'] }}</div>
+                            {% if 'Ativo' in linha['Status Vigência'] %}<span class="badge-status s-ativo">Ativo</span>
+                            {% elif 'Vencido' in linha['Status Vigência'] %}<span class="badge-status s-vencido">Vencido</span>
+                            {% else %}<span class="badge-status s-indef">Indefinido</span>{% endif %}
+                        </div>
+                        <div class="cc-ent">{{ linha['Entidade Beneficiada'] }}</div>
+                        <div class="cc-grid">
+                            <div><span class="lbl">Valor Total</span><span class="num">{{ linha['Valor Total'] }}</span></div>
+                            <div><span class="lbl">Pago</span><span class="num">{{ linha['Valor Pago'] }}</span></div>
+                            <div><span class="lbl">Saldo</span><span class="num">{{ linha['Saldo Restante'] }}</span></div>
+                            <div><span class="lbl">Vencimento</span><span class="num">{{ linha['Vencimento'] or '—' }}</span></div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="no-results" id="semConvenios">Nenhum convênio encontrado para a busca.</div>
+            </div>
+
+            <!-- SICONFI -->
+            <div class="panel">
+                <div class="section-title"><i class="bi bi-bank2"></i> Conformidade Fiscal (Siconfi)</div>
+
+                {% if siconfi %}
+                    <!-- Desktop -->
+                    <div class="table-responsive d-none d-lg-block">
+                        <table class="table align-middle">
+                            <thead>
+                                <tr><th>Documento</th><th>Instituição</th><th>Período</th><th>Status</th><th>Data</th></tr>
+                            </thead>
+                            <tbody>
+                                {% for e in siconfi %}
+                                <tr>
+                                    <td>{{ e.documento }}</td>
+                                    <td><span class="inst-chip">{% if e.instituicao and 'mara' in e.instituicao %}Câmara{% elif e.instituicao %}Prefeitura{% else %}—{% endif %}</span></td>
+                                    <td class="num">{{ e.periodo }}{% if e.periodicidade %} <span class="text-secondary">({{ e.periodicidade }})</span>{% endif %}</td>
+                                    <td><span class="badge text-bg-{{ e.status_cor }}">{{ e.status_rotulo }}</span></td>
+                                    <td class="num">{{ e.data_status[:10] if e.data_status else '—' }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <!-- Mobile -->
+                    <div class="d-lg-none">
+                        {% for e in siconfi %}
+                        <div class="conv-card">
+                            <div class="d-flex justify-content-between align-items-start gap-2">
+                                <div class="cc-obra">{{ e.documento }}</div>
+                                <span class="badge text-bg-{{ e.status_cor }}">{{ e.status_rotulo }}</span>
+                            </div>
+                            <div class="cc-ent">{{ e.instituicao }}</div>
+                            <div class="cc-grid">
+                                <div><span class="lbl">Período</span><span class="num">{{ e.periodo }}{% if e.periodicidade %} ({{ e.periodicidade }}){% endif %}</span></div>
+                                <div><span class="lbl">Data</span><span class="num">{{ e.data_status[:10] if e.data_status else '—' }}</span></div>
+                            </div>
+                        </div>
                         {% endfor %}
-                    </tbody>
-                </table>
+                    </div>
+                {% else %}
+                    <div class="text-secondary py-2">Sem registros de entregas fiscais (Siconfi) para {{ nome_cidade }} no momento.</div>
+                {% endif %}
             </div>
-
-            <hr style="border-color: #333;" class="my-5">
-            <h4 class="mb-4">🏛️ Conformidade Fiscal (Siconfi)</h4>
-
-            {% if siconfi %}
-            <div class="table-responsive">
-                <table class="table table-dark table-hover">
-                    <thead>
-                        <tr>
-                            <th>Documento</th>
-                            <th>Período</th>
-                            <th>Status</th>
-                            <th>Data do Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for entrega in siconfi %}
-                        <tr>
-                            <td>{{ entrega['Documento'] }}</td>
-                            <td>{{ entrega['Período'] }}</td>
-                            <td>
-                                {% if entrega['Status'] and 'ntreg' in entrega['Status'] %}✅{% else %}⚠️{% endif %}
-                                {{ entrega['Status'] }}
-                            </td>
-                            <td>{{ entrega['Data Status'] }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            {% else %}
-            <div class="alert alert-secondary" style="background-color: #1a1c24; color: #888; border: 1px solid #333;">
-                Sem registros de entregas fiscais (Siconfi) para {{ nome_cidade }} no momento.
-            </div>
-            {% endif %}
 
         {% else %}
-            <div class="alert alert-warning" style="background-color: #332701; color: #ffca2c; border: 1px solid #ffca2c;">
-                Aguardando dados para {{ nome_cidade }}. Certifique-se de ter rodado a ingestão para este banco na nuvem!
+            <div class="alert alert-warning">
+                Aguardando dados para {{ nome_cidade }}. Certifique-se de ter rodado a ingestão para este município.
             </div>
         {% endif %}
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script>
+        // ===== Busca/filtro de convênios (tabela + cartões) =====
+        (function () {
+            const input = document.getElementById('buscaConvenio');
+            if (!input) return;
+            const itens = document.querySelectorAll('.filtravel');
+            const aviso = document.getElementById('semConvenios');
+            input.addEventListener('input', function () {
+                const q = this.value.trim().toLowerCase();
+                let visiveis = 0;
+                itens.forEach(el => {
+                    const match = el.dataset.busca.includes(q);
+                    el.style.display = match ? '' : 'none';
+                    if (match) visiveis++;
+                });
+                // itens conta tabela + cartões (mesmos dados duplicados); >0 = há resultado
+                if (aviso) aviso.style.display = visiveis === 0 ? 'block' : 'none';
+            });
+        })();
+
+        // ===== Gráficos =====
+        {% if grafico %}
+        const G = {{ grafico | tojson }};
+        const fmtBRL = v => 'R$ ' + Number(v).toLocaleString('pt-BR', {maximumFractionDigits: 0});
+
+        new Chart(document.getElementById('chartExec'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Pago', 'Saldo em Risco', 'Perdido'],
+                datasets: [{ data: [G.pago, G.risco, G.perdido], backgroundColor: ['#1f9d55', '#d98a00', '#d23b3b'], borderWidth: 0 }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false, cutout: '62%',
+                plugins: {
+                    legend: { position: 'bottom' },
+                    tooltip: { callbacks: { label: c => c.label + ': ' + fmtBRL(c.parsed) } }
+                }
+            }
+        });
+
+        new Chart(document.getElementById('chartStatus'), {
+            type: 'bar',
+            data: {
+                labels: ['Ativos', 'Vencidos', 'Indefinidos'],
+                datasets: [{ data: [G.ativos, G.vencidos, G.indefinidos], backgroundColor: ['#1f9d55', '#d23b3b', '#9aa3ad'], borderRadius: 6 }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+            }
+        });
+        {% endif %}
+    </script>
 </body>
 </html>

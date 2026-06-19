@@ -4,6 +4,16 @@ from flask import Flask, render_template, request
 import psycopg2
 import psycopg2.extras
 
+try:
+    # Carrega o .env automaticamente em ambiente local (procura na raiz do projeto).
+    # Em produção (Vercel) as env vars vêm do painel e o dotenv é simplesmente ignorado.
+    from dotenv import load_dotenv
+
+    load_dotenv()
+    load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
+except ImportError:
+    pass
+
 app = Flask(__name__, template_folder='templates')
 
 # A Carteira de Clientes do seu SaaS
@@ -25,6 +35,29 @@ IBGE_PADRAO = "3523206"
 def formatar_real(valor):
     if valor is None: return "R$ 0,00"
     return f"R$ {float(valor):,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+
+
+def _num(valor):
+    """Converte valor numérico do banco em float (0.0 se None)."""
+    return float(valor) if valor is not None else 0.0
+
+
+# Mapeia o código de status do Siconfi para (rótulo legível, cor do badge Bootstrap).
+SICONFI_STATUS = {
+    "HO": ("Homologado", "success"),
+    "RE": ("Recebido", "info"),
+}
+
+
+def status_siconfi(codigo, data_status):
+    """Resolve o badge de status de uma entrega fiscal."""
+    if codigo in SICONFI_STATUS:
+        return SICONFI_STATUS[codigo]
+    if codigo:  # código desconhecido — mostra como veio
+        return (codigo, "secondary")
+    if data_status:  # sem status formal, mas foi enviado (ex.: MSC)
+        return ("Entregue", "secondary")
+    return ("Pendente", "warning")
 
 
 def conectar():
@@ -96,14 +129,16 @@ def carregar_dados(codigo_ibge):
         # 3. CONFORMIDADE FISCAL (Siconfi) — entregas do ano mais recente disponível
         query_siconfi = """
             SELECT
-                payload->>'documento' AS "Documento",
-                payload->>'periodo' AS "Período",
-                payload->>'status' AS "Status",
-                payload->>'data_status' AS "Data Status"
+                payload->>'entregavel' AS documento,
+                payload->>'instituicao' AS instituicao,
+                payload->>'periodo' AS periodo,
+                payload->>'periodicidade' AS periodicidade,
+                payload->>'status_relatorio' AS status,
+                payload->>'data_status' AS data_status
             FROM raw_siconfi_entregas
             WHERE cod_ibge = %s
               AND ano = (SELECT MAX(ano) FROM raw_siconfi_entregas WHERE cod_ibge = %s)
-            ORDER BY payload->>'periodo', payload->>'documento';
+            ORDER BY payload->>'instituicao', payload->>'entregavel', payload->>'periodo';
         """
         cursor.execute(query_siconfi, (codigo_ibge, codigo_ibge))
         siconfi_brutos = cursor.fetchall()
@@ -119,9 +154,17 @@ def carregar_dados(codigo_ibge):
             'perdido': formatar_real(totais['perdido'])
         }
 
-        # Formatando as moedas na tabela de detalhes
+        # Formatando as moedas na tabela de detalhes + contagem por status (gráficos)
         lista_detalhes = []
+        ativos = vencidos = indefinidos = 0
         for linha in detalhes_brutos:
+            status_vig = linha['Status Vigência']
+            if 'Ativo' in status_vig:
+                ativos += 1
+            elif 'Vencido' in status_vig:
+                vencidos += 1
+            else:
+                indefinidos += 1
             lista_detalhes.append({
                 'Nº Convênio': linha['Nº Convênio'],
                 'Descrição da Obra': linha['Descrição da Obra'],
@@ -130,16 +173,38 @@ def carregar_dados(codigo_ibge):
                 'Valor Pago': formatar_real(linha['Valor Pago']),
                 'Saldo Restante': formatar_real(linha['Saldo Restante']),
                 'Vencimento': linha['Vencimento'],
-                'Status Vigência': linha['Status Vigência']
+                'Status Vigência': status_vig
             })
 
-        lista_siconfi = [dict(linha) for linha in siconfi_brutos]
+        # Entregas Siconfi com badge de status resolvido
+        lista_siconfi = []
+        for linha in siconfi_brutos:
+            rotulo, cor = status_siconfi(linha['status'], linha['data_status'])
+            lista_siconfi.append({
+                'documento': linha['documento'],
+                'instituicao': linha['instituicao'],
+                'periodo': linha['periodo'],
+                'periodicidade': linha['periodicidade'],
+                'status_rotulo': rotulo,
+                'status_cor': cor,
+                'data_status': linha['data_status'],
+            })
 
-        return dados_totais, lista_detalhes, lista_siconfi
+        # Dados numéricos para os gráficos (Chart.js)
+        grafico = {
+            'pago': _num(totais['pago']),
+            'risco': _num(totais['risco']),
+            'perdido': _num(totais['perdido']),
+            'ativos': ativos,
+            'vencidos': vencidos,
+            'indefinidos': indefinidos,
+        }
+
+        return dados_totais, lista_detalhes, lista_siconfi, grafico
 
     except Exception as e:
         print("Erro:", e)
-        return None, None, None
+        return None, None, None, None
     finally:
         if conexao is not None:
             conexao.close()
@@ -154,7 +219,7 @@ def dashboard():
         codigo_ibge = IBGE_PADRAO
     nome_cidade = CIDADES.get(codigo_ibge, "Cidade Desconhecida")
 
-    totais, detalhes, siconfi = carregar_dados(codigo_ibge)
+    totais, detalhes, siconfi, grafico = carregar_dados(codigo_ibge)
 
     return render_template('index.html',
                            cidades=CIDADES,
@@ -162,8 +227,14 @@ def dashboard():
                            nome_cidade=nome_cidade,
                            totais=totais,
                            detalhes=detalhes,
-                           siconfi=siconfi)
+                           siconfi=siconfi,
+                           grafico=grafico)
 
 
 # Variável de entrada para a Vercel
 app_handler = app
+
+
+if __name__ == '__main__':
+    # Execução local: python api/index.py  ->  http://127.0.0.1:5000
+    app.run(host='127.0.0.1', port=5000, debug=True)

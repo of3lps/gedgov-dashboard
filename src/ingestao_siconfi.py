@@ -6,7 +6,12 @@ from config import CIDADES, get_conn
 
 
 def _buscar_entregas(codigo_ibge, ano_referencia):
-    """Consome o Data Lake do Siconfi (Tesouro Nacional) para um município/ano."""
+    """Consome o Data Lake do Siconfi (Tesouro Nacional) para um município/ano.
+
+    Retorna os itens BRUTOS da API (espelho fiel), preservando todas as chaves
+    originais — entre elas: entregavel, status_relatorio, instituicao, periodo,
+    periodicidade, data_status, forma_envio, tipo_relatorio.
+    """
     url_base = "https://apidatalake.tesouro.gov.br/ords/siconfi/tt/extrato_entregas"
     params = {"id_ente": codigo_ibge, "an_referencia": ano_referencia}
 
@@ -15,17 +20,7 @@ def _buscar_entregas(codigo_ibge, ano_referencia):
         response.raise_for_status()
 
         # O Siconfi retorna os dados dentro da chave 'items'
-        dados = response.json().get("items", [])
-
-        entregas_processadas = []
-        for entrega in dados:
-            entregas_processadas.append({
-                "documento": entrega.get("entrega"),  # Ex: RREO, RGF, DCA
-                "periodo": entrega.get("periodo"),
-                "status": entrega.get("status_entrega"),
-                "data_status": entrega.get("data_status")
-            })
-        return entregas_processadas
+        return response.json().get("items", [])
 
     except requests.exceptions.RequestException as e:
         print(f"   [Siconfi] Erro na ingestão ({codigo_ibge}/{ano_referencia}): {e}")
