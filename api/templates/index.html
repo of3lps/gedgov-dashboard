@@ -73,6 +73,7 @@
         .conv-card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px; margin-bottom: 12px; }
         .conv-card .cc-obra { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
         .conv-card .cc-ent { color: var(--muted); font-size: 13px; margin-bottom: 10px; }
+        .min-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; color: var(--brand); background: var(--brand-soft); border-radius: 6px; padding: .15em .5em; margin-top: 4px; max-width: 100%; }
         .cc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; font-size: 13px; }
         .cc-grid .lbl { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .02em; display: block; }
 
@@ -195,6 +196,10 @@
                     <div class="section-title"><i class="bi bi-bar-chart-fill"></i> Convênios por Vigência</div>
                     <div class="chart-box"><canvas id="chartStatus"></canvas></div>
                 </div></div>
+                <div class="col-12"><div class="panel">
+                    <div class="section-title"><i class="bi bi-bank2"></i> Recursos por Ministério</div>
+                    <div class="chart-box" style="height: 300px;"><canvas id="chartMin"></canvas></div>
+                </div></div>
             </div>
 
             <!-- CONVÊNIOS -->
@@ -222,6 +227,12 @@
                             <option value="ativo">Ativo</option>
                             <option value="vencido">Vencido</option>
                             <option value="indef">Indefinido</option>
+                        </select>
+                    </div>
+                    <div class="grp" style="flex:1 1 220px;">
+                        <label for="filtroMinisterio">Ministério</label>
+                        <select id="filtroMinisterio" class="form-select">
+                            <option value="">Todos</option>
                         </select>
                     </div>
                     <div class="grp">
@@ -348,13 +359,19 @@
         const STATUS_LABEL = { ativo: 'Ativo', vencido: 'Vencido', indef: 'Indefinido' };
         const STATUS_CLASS = { ativo: 's-ativo', vencido: 's-vencido', indef: 's-indef' };
 
-        const state = { busca: '', status: '', pagoZero: false, vencendo: false, ordenacao: 'saldo_desc', pagina: 1, pageSize: 20 };
+        const state = { busca: '', status: '', ministerio: '', pagoZero: false, vencendo: false, ordenacao: 'saldo_desc', pagina: 1, pageSize: 20 };
         let filtrados = [];
 
         const fmtBRL = v => 'R$ ' + Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         const fmtBRLk = v => 'R$ ' + Number(v || 0).toLocaleString('pt-BR', { maximumFractionDigits: 0 });
         const fmtData = d => d ? d.split('-').reverse().join('/') : '—';
         const esc = s => (s == null ? '' : String(s)).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        // nome curto do ministério (remove o prefixo "Ministério d... ")
+        const minCurto = m => (m || '—').replace(/^Minist[ée]rio\s+d[aeo]s?\s+/i, '').replace(/^Minist[ée]rio\s+/i, '');
+        function minChip(m) {
+            if (!m) return '';
+            return `<div class="min-chip" title="${esc(m)}"><i class="bi bi-bank2"></i>${esc(minCurto(m))}</div>`;
+        }
 
         // ----- janela de "vencendo em 90 dias" -----
         function venceEmBreve(c) {
@@ -371,6 +388,7 @@
             filtrados = CONVENIOS.filter(c => {
                 if (q && !((c.obra || '').toLowerCase().includes(q) || (c.entidade || '').toLowerCase().includes(q))) return false;
                 if (state.status && c.status !== state.status) return false;
+                if (state.ministerio && c.ministerio !== state.ministerio) return false;
                 if (state.pagoZero && c.pago !== 0) return false;
                 if (state.vencendo && !venceEmBreve(c)) return false;
                 return true;
@@ -388,14 +406,17 @@
         }
 
         // ----- KPIs + gráficos a partir do conjunto filtrado -----
-        let chartExec, chartStatus;
+        let chartExec, chartStatus, chartMin;
         function atualizarKpisEGraficos() {
             let alocado = 0, pago = 0, risco = 0, perdido = 0, a = 0, v = 0, i = 0;
+            const porMin = {};
             filtrados.forEach(c => {
                 alocado += c.valor; pago += c.pago;
                 if (c.status === 'ativo') { risco += c.saldo; a++; }
                 else if (c.status === 'vencido') { perdido += c.saldo; v++; }
                 else { i++; }
+                const m = c.ministerio || '—';
+                porMin[m] = (porMin[m] || 0) + c.valor;
             });
             document.getElementById('kpiObras').textContent = filtrados.length;
             document.getElementById('kpiAlocado').textContent = fmtBRL(alocado);
@@ -407,6 +428,12 @@
             chartExec.update();
             chartStatus.data.datasets[0].data = [a, v, i];
             chartStatus.update();
+
+            // top 8 ministérios por valor
+            const top = Object.entries(porMin).sort((x, y) => y[1] - x[1]).slice(0, 8);
+            chartMin.data.labels = top.map(([m]) => minCurto(m));
+            chartMin.data.datasets[0].data = top.map(([, val]) => val);
+            chartMin.update();
         }
 
         // ----- render da página -----
@@ -424,7 +451,7 @@
             tbody.innerHTML = pagina.map(c => `
                 <tr>
                     <td class="num">${esc(c.n)}</td>
-                    <td>${esc(c.obra)}</td>
+                    <td>${esc(c.obra)}${minChip(c.ministerio)}</td>
                     <td>${esc(c.entidade)}</td>
                     <td class="num text-end">${fmtBRL(c.valor)}</td>
                     <td class="num text-end">${fmtBRL(c.pago)}</td>
@@ -438,7 +465,8 @@
                     <div class="d-flex justify-content-between align-items-start gap-2">
                         <div class="cc-obra">${esc(c.obra)}</div>${badge(c.status)}
                     </div>
-                    <div class="cc-ent">${esc(c.entidade)}</div>
+                    ${minChip(c.ministerio)}
+                    <div class="cc-ent mt-1">${esc(c.entidade)}</div>
                     <div class="cc-grid">
                         <div><span class="lbl">Valor Total</span><span class="num">${fmtBRL(c.valor)}</span></div>
                         <div><span class="lbl">Pago</span><span class="num">${fmtBRL(c.pago)}</span></div>
@@ -460,6 +488,7 @@
             const chips = [];
             if (state.busca.trim()) chips.push(['busca', `Busca: "${state.busca.trim()}"`]);
             if (state.status) chips.push(['status', `Status: ${STATUS_LABEL[state.status]}`]);
+            if (state.ministerio) chips.push(['ministerio', `Ministério: ${minCurto(state.ministerio)}`]);
             if (state.pagoZero) chips.push(['pagoZero', 'Pago = 0']);
             if (state.vencendo) chips.push(['vencendo', 'Vencendo em 90 dias']);
             const box = document.getElementById('chips');
@@ -510,10 +539,32 @@
             data: { labels: ['Ativos', 'Vencidos', 'Indefinidos'], datasets: [{ data: [0, 0, 0], backgroundColor: ['#1f9d55', '#d23b3b', '#9aa3ad'], borderRadius: 6 }] },
             options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
         });
+        chartMin = new Chart(document.getElementById('chartMin'), {
+            type: 'bar',
+            data: { labels: [], datasets: [{ data: [], backgroundColor: '#1D4B8F', borderRadius: 6 }] },
+            options: {
+                indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => fmtBRLk(c.parsed.x) } } },
+                scales: { x: { beginAtZero: true, ticks: { callback: v => fmtBRLk(v) } } }
+            }
+        });
+
+        // popula o filtro de Ministério com os órgãos distintos (com contagem), ordenados
+        (function preencherMinisterios() {
+            const cont = {};
+            CONVENIOS.forEach(c => { const m = c.ministerio || '—'; cont[m] = (cont[m] || 0) + 1; });
+            const sel = document.getElementById('filtroMinisterio');
+            Object.entries(cont).sort((a, b) => b[1] - a[1]).forEach(([m, n]) => {
+                const o = document.createElement('option');
+                o.value = m; o.textContent = `${minCurto(m)} (${n})`;
+                sel.appendChild(o);
+            });
+        })();
 
         // ----- listeners -----
         document.getElementById('buscaConvenio').addEventListener('input', e => { state.busca = e.target.value; aplicar(); });
         document.getElementById('filtroStatus').addEventListener('change', e => { state.status = e.target.value; aplicar(); });
+        document.getElementById('filtroMinisterio').addEventListener('change', e => { state.ministerio = e.target.value; aplicar(); });
         document.getElementById('ordenacao').addEventListener('change', e => { state.ordenacao = e.target.value; aplicar(false); });
         document.getElementById('filtroPago0').addEventListener('change', e => { state.pagoZero = e.target.checked; aplicar(); });
         document.getElementById('filtroVencendo').addEventListener('change', e => { state.vencendo = e.target.checked; aplicar(); });
@@ -547,6 +598,7 @@
             const k = b.dataset.chip;
             if (k === 'busca') { state.busca = ''; document.getElementById('buscaConvenio').value = ''; }
             if (k === 'status') { state.status = ''; document.getElementById('filtroStatus').value = ''; }
+            if (k === 'ministerio') { state.ministerio = ''; document.getElementById('filtroMinisterio').value = ''; }
             if (k === 'pagoZero') { state.pagoZero = false; document.getElementById('filtroPago0').checked = false; }
             if (k === 'vencendo') { state.vencendo = false; document.getElementById('filtroVencendo').checked = false; }
             aplicar();
@@ -554,9 +606,10 @@
 
         document.getElementById('btnLimpar').addEventListener('click', e => {
             e.preventDefault();
-            state.busca = ''; state.status = ''; state.pagoZero = false; state.vencendo = false;
+            state.busca = ''; state.status = ''; state.ministerio = ''; state.pagoZero = false; state.vencendo = false;
             document.getElementById('buscaConvenio').value = '';
             document.getElementById('filtroStatus').value = '';
+            document.getElementById('filtroMinisterio').value = '';
             document.getElementById('filtroPago0').checked = false;
             document.getElementById('filtroVencendo').checked = false;
             aplicar();
