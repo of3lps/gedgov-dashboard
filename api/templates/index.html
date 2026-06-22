@@ -201,13 +201,23 @@
                         <div class="tag">BI Orçamentário Executivo</div>
                     </div>
                 </div>
-                <div class="city-select w-100 w-sm-auto">
-                    <label for="cidadeSelect" class="form-label small text-secondary mb-1">Município ativo</label>
-                    <select id="cidadeSelect" class="form-select" onchange="window.location.href='/?ibge=' + this.value">
-                        {% for ibge, nome in cidades.items() %}
-                            <option value="{{ ibge }}" {% if ibge == ibge_atual %}selected{% endif %}>{{ nome }}</option>
-                        {% endfor %}
-                    </select>
+                <div class="d-flex align-items-center gap-3">
+                    {% if is_admin and cidades %}
+                    <div class="city-select">
+                        <label for="cidadeSelect" class="form-label small text-secondary mb-1">Município ativo</label>
+                        <select id="cidadeSelect" class="form-select" onchange="window.location.href='/?ibge=' + this.value">
+                            {% for ibge, nome in cidades.items() %}
+                                <option value="{{ ibge }}" {% if ibge == ibge_atual %}selected{% endif %}>{{ nome }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    {% endif %}
+                    <div class="d-flex flex-column align-items-end gap-1">
+                        <span class="small text-muted">{{ username }}</span>
+                        <a href="/logout" class="btn btn-sm btn-outline-secondary" style="font-size:12px; padding: .2em .7em;">
+                            <i class="bi bi-box-arrow-right"></i> Sair
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>

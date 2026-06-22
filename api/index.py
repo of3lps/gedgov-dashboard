@@ -1,6 +1,8 @@
 import os
+import functools
 
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, session, redirect, url_for, flash
+from werkzeug.security import check_password_hash
 import psycopg2
 import psycopg2.extras
 
@@ -15,6 +17,7 @@ except ImportError:
     pass
 
 app = Flask(__name__, template_folder='templates')
+app.secret_key = os.environ.get("SECRET_KEY", "dev-insecure-key-troque-em-producao")
 
 # A Carteira de Clientes do seu SaaS
 # (mantida aqui porque a Vercel empacota apenas a pasta api/ — não importar de src/)
@@ -30,6 +33,15 @@ CIDADES = {
 }
 
 IBGE_PADRAO = "3523206"
+
+
+def login_required(f):
+    @functools.wraps(f)
+    def decorated(*args, **kwargs):
+        if not session.get("user_id"):
+            return redirect(url_for("login"))
+        return f(*args, **kwargs)
+    return decorated
 
 
 def formatar_real(valor):
@@ -73,11 +85,28 @@ def status_siconfi(codigo, data_status):
 
 
 def conectar():
-    """Abre conexão lendo a connection string da env var DATABASE_URL."""
     database_url = os.environ.get("DATABASE_URL")
     if not database_url:
         raise RuntimeError("DATABASE_URL não configurada no ambiente.")
     return psycopg2.connect(database_url)
+
+
+def buscar_usuario(username):
+    conexao = None
+    try:
+        conexao = conectar()
+        cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cursor.execute(
+            "SELECT id, username, password_hash, codigo_ibge, is_admin FROM usuarios WHERE username = %s AND ativo = TRUE;",
+            (username,)
+        )
+        return cursor.fetchone()
+    except Exception as e:
+        print("Erro buscar_usuario:", e)
+        return None
+    finally:
+        if conexao:
+            conexao.close()
 
 
 def carregar_dados(codigo_ibge):
@@ -228,19 +257,59 @@ def carregar_dados(codigo_ibge):
             conexao.close()
 
 
-@app.route('/')
-def dashboard():
-    codigo_ibge = request.args.get('ibge', IBGE_PADRAO)
-    # Validação: só aceitamos códigos da carteira de clientes (evita SQL injection
-    # e acesso a dados arbitrários). Qualquer valor desconhecido cai no padrão.
-    if codigo_ibge not in CIDADES:
-        codigo_ibge = IBGE_PADRAO
-    nome_cidade = CIDADES.get(codigo_ibge, "Cidade Desconhecida")
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if session.get("user_id"):
+        return redirect(url_for("dashboard"))
 
+    erro = None
+    if request.method == 'POST':
+        username = request.form.get('username', '').strip()
+        password = request.form.get('password', '')
+        usuario = buscar_usuario(username)
+        if usuario and check_password_hash(usuario['password_hash'], password):
+            session.clear()
+            session['user_id'] = usuario['id']
+            session['username'] = usuario['username']
+            session['codigo_ibge'] = usuario['codigo_ibge']
+            session['is_admin'] = bool(usuario['is_admin'])
+            return redirect(url_for("dashboard"))
+        erro = "Usuário ou senha inválidos."
+
+    return render_template('login.html', erro=erro)
+
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for("login"))
+
+
+@app.route('/')
+@login_required
+def dashboard():
+    is_admin = session.get('is_admin', False)
+
+    if is_admin:
+        # Admin pode trocar de cidade via query param
+        codigo_ibge = request.args.get('ibge', IBGE_PADRAO)
+        if codigo_ibge not in CIDADES:
+            codigo_ibge = IBGE_PADRAO
+        cidades_visíveis = CIDADES
+    else:
+        # Prefeitura: usa apenas o código vinculado à conta
+        codigo_ibge = session.get('codigo_ibge') or IBGE_PADRAO
+        if codigo_ibge not in CIDADES:
+            codigo_ibge = IBGE_PADRAO
+        cidades_visíveis = None  # sem seletor
+
+    nome_cidade = CIDADES.get(codigo_ibge, "Cidade Desconhecida")
     convenios, siconfi, convenios_sp = carregar_dados(codigo_ibge)
 
     return render_template('index.html',
-                           cidades=CIDADES,
+                           is_admin=is_admin,
+                           username=session.get('username'),
+                           cidades=cidades_visíveis,
                            ibge_atual=codigo_ibge,
                            nome_cidade=nome_cidade,
                            convenios=convenios if convenios is not None else [],
