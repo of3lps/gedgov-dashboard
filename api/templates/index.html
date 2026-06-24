@@ -158,6 +158,9 @@
         .est-tramite { background: #fff4e0; color: var(--warn); }
         .est-adit { font-size: 11px; font-weight: 600; padding: .25em .55em; border-radius: 20px; background: #fbe6e6; color: var(--danger); }
         .orig-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; color: var(--brand); background: var(--brand-soft); border-radius: 6px; padding: .15em .5em; }
+        /* ===== Chip do parlamentar ===== */
+        .dep-chip { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 700; color: #7c4f00; background: #fff4e0; border: 1px solid #f5d78a; border-radius: 8px; padding: .25em .65em; margin-top: 5px; max-width: 100%; }
+        .dep-chip .dep-partido { font-weight: 600; font-size: 11px; color: #a36200; background: #ffe5a0; border-radius: 4px; padding: .1em .4em; }
 
         /* ===== Botão voltar ao topo ===== */
         .btn-topo {
@@ -649,7 +652,7 @@
             tbody.innerHTML = pagina.map(c => `
                 <tr class="conv-row" data-id="${esc(c.id)}" tabindex="0" role="button" title="Ver detalhes">
                     <td class="num">${esc(c.n)}</td>
-                    <td>${esc(c.obra)}${minChip(c.ministerio)}</td>
+                    <td>${esc(c.obra)}${minChip(c.ministerio)}${c.parlamentar ? `<div class="dep-chip mt-1"><i class="bi bi-person-badge"></i>${esc(c.parlamentar)}</div>` : ''}</td>
                     <td>${esc(c.entidade)}</td>
                     <td class="num text-end">${fmtBRL(c.valor)}</td>
                     <td class="num text-end">${fmtBRL(c.pago)}</td>
@@ -665,6 +668,7 @@
                         <div class="cc-obra">${esc(c.obra)}</div>${badge(c.status)}
                     </div>
                     ${minChip(c.ministerio)}
+                    ${c.parlamentar ? `<div class="dep-chip mt-1"><i class="bi bi-person-badge"></i>${esc(c.parlamentar)}</div>` : ''}
                     <div class="cc-ent mt-1">${esc(c.entidade)}</div>
                     <div class="d-flex flex-wrap gap-1 mb-2">${libBadge(c)}</div>
                     <div class="cc-grid">
@@ -809,6 +813,14 @@
                     ${detRow('Tipo', c.tipo)}
                     ${detRow('Nº do processo', c.processo)}
                 </div>
+                ${c.parlamentar ? `
+                <div class="det-sec">
+                    <div class="det-sec-title"><i class="bi bi-person-badge"></i> Parlamentar responsável</div>
+                    <div class="dep-chip mb-2" style="font-size:13px; padding:.4em .8em;">
+                        <i class="bi bi-person-badge"></i>${esc(c.parlamentar)}
+                    </div>
+                    ${detRow('Tipo de emenda', c.parlamentar_tipo)}
+                </div>` : ''}
                 <div class="det-sec">
                     <div class="det-sec-title"><i class="bi bi-people"></i> Partes</div>
                     ${detRow('Ministério', c.ministerio)}
@@ -973,12 +985,30 @@
             document.getElementById('spKpiTramite').textContent = tramite;
         }
 
+        // Detecta parlamentar no campo Origem: "NOME - PARTIDO - ANO.NNN.NNNNN"
+        function parsearParlamentar(origem) {
+            if (!origem) return null;
+            const m = origem.match(/^(.+?)\s+-\s+(.+?)\s+-\s+\d{4}\.\d{3}\.\d+$/);
+            if (!m) return null;
+            return { nome: m[1].trim(), partido: m[2].trim() };
+        }
+
+        function depChip(c) {
+            const p = parsearParlamentar(c.origem);
+            if (!p) return '';
+            return `<div class="dep-chip"><i class="bi bi-person-badge"></i>${esc(p.nome)} <span class="dep-partido">${esc(p.partido)}</span></div>`;
+        }
+
         function render() {
             document.getElementById('spSem').style.display = filtrados.length ? 'none' : 'block';
             spTbody.innerHTML = filtrados.map(c => `
                 <tr class="conv-row" data-demanda="${esc(c.demanda)}" tabindex="0" role="button" title="Ver detalhes">
                     <td class="num">${esc(c.convenio || '—')}</td>
-                    <td>${esc(c.obra)}<div class="orig-chip mt-1" title="${esc(c.origem)}"><i class="bi bi-megaphone"></i>${esc(c.origem_demanda || '—')}</div></td>
+                    <td>
+                        ${esc(c.obra)}
+                        <div class="orig-chip mt-1" title="${esc(c.origem)}"><i class="bi bi-megaphone"></i>${esc(c.origem_demanda || '—')}</div>
+                        ${depChip(c)}
+                    </td>
                     <td>${esc(c.portfolio || '—')}</td>
                     <td class="num text-end">${fmtBRL(c.valor_estado)}</td>
                     <td class="num text-end">${fmtBRL(c.valor_total)}</td>
@@ -992,6 +1022,7 @@
                         <div class="cc-obra">${esc(c.obra)}</div>${statusBadge(c)}
                     </div>
                     <div class="orig-chip mt-1" title="${esc(c.origem)}"><i class="bi bi-megaphone"></i>${esc(c.origem_demanda || '—')}</div>
+                    ${depChip(c)}
                     <div class="cc-grid mt-2">
                         <div><span class="lbl">Valor Estado</span><span class="num">${fmtBRL(c.valor_estado)}</span></div>
                         <div><span class="lbl">Valor Total</span><span class="num">${fmtBRL(c.valor_total)}</span></div>
@@ -1053,10 +1084,22 @@
                     ${detRow('Valor total', fmtBRL(c.valor_total))}
                     ${detRow('Contrapartida (estimada)', fmtBRL(contrap))}
                 </div>
+                ${(() => {
+                    const p = parsearParlamentar(c.origem);
+                    if (!p) return '';
+                    return `<div class="det-sec">
+                        <div class="det-sec-title"><i class="bi bi-person-badge"></i> Parlamentar responsável</div>
+                        <div class="dep-chip mb-2" style="font-size:13px; padding:.4em .8em;">
+                            <i class="bi bi-person-badge"></i>${esc(p.nome)} <span class="dep-partido">${esc(p.partido)}</span>
+                        </div>
+                        ${detRow('Tipo de recurso', c.origem_demanda)}
+                        ${detRow('Processo estadual', c.origem.split(' - ').slice(-1)[0])}
+                    </div>`;
+                })()}
                 <div class="det-sec">
                     <div class="det-sec-title"><i class="bi bi-megaphone"></i> Origem do recurso</div>
                     ${detRow('Tipo', c.origem_demanda)}
-                    ${detRow('Origem', c.origem)}
+                    ${parsearParlamentar(c.origem) ? '' : detRow('Origem', c.origem)}
                     ${detRow('Escritório Regional', c.er)}
                 </div>
                 <div class="det-sec">

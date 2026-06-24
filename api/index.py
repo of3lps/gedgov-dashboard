@@ -141,6 +141,8 @@ def carregar_dados(codigo_ibge):
                 payload->>'dataInicioVigencia' AS inicio,
                 payload->>'dataFinalVigencia' AS venc,
                 payload->>'dataPublicacao' AS publicacao,
+                payload->>'parlamentar_nome' AS parlamentar_nome,
+                payload->>'parlamentar_tipo' AS parlamentar_tipo,
                 CASE
                     WHEN payload->>'dataFinalVigencia' IS NULL THEN 'indef'
                     WHEN TO_DATE(payload->>'dataFinalVigencia', 'YYYY-MM-DD') >= CURRENT_DATE THEN 'ativo'
@@ -205,6 +207,8 @@ def carregar_dados(codigo_ibge):
                 'venc': linha['venc'],           # 'YYYY-MM-DD' ou None
                 'publicacao': linha['publicacao'],
                 'status': linha['status'],       # 'ativo' | 'vencido' | 'indef'
+                'parlamentar': linha['parlamentar_nome'],
+                'parlamentar_tipo': linha['parlamentar_tipo'],
             })
 
         # Entregas Siconfi com badge de status resolvido
