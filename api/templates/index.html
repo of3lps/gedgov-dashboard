@@ -231,13 +231,16 @@
         <div class="page-title">Portal de Gestão Orçamentária</div>
         <div class="page-sub">Visão executiva — <b>{{ nome_cidade }}</b></div>
 
-        <!-- Abas: Federal x Estadual (totalmente separados) -->
+        <!-- Abas: Federal x Estadual x Emendas Diretas -->
         <div class="tabs" role="tablist">
             <button class="tab-btn active" data-tab="federal" type="button">
                 <i class="bi bi-bank"></i> Federal{% if total_obras > 0 %} <span class="tab-count">{{ total_obras }}</span>{% endif %}
             </button>
             <button class="tab-btn" data-tab="estadual" type="button">
                 <i class="bi bi-geo-alt"></i> Estadual (SP){% if total_sp > 0 %} <span class="tab-count">{{ total_sp }}</span>{% endif %}
+            </button>
+            <button class="tab-btn" data-tab="te" type="button">
+                <i class="bi bi-lightning-charge"></i> Emendas Diretas{% if total_te > 0 %} <span class="tab-count">{{ total_te }}</span>{% endif %}
             </button>
         </div>
 
@@ -518,6 +521,74 @@
             </div>
         {% endif %}
         </div><!-- /pane-estadual -->
+
+        <!-- ===================== ABA EMENDAS DIRETAS (Transferências Especiais) ===================== -->
+        <div class="tab-pane" id="pane-te">
+        {% if total_te > 0 %}
+
+            <!-- KPIs -->
+            <div class="row row-cols-2 row-cols-lg-3 g-3 mb-4">
+                <div class="col"><div class="kpi">
+                    <div class="k-top"><span class="k-label">Transferências</span><i class="bi bi-lightning-charge k-icon"></i></div>
+                    <div class="k-value" id="teKpiTotal">—</div>
+                </div></div>
+                <div class="col"><div class="kpi k-pago">
+                    <div class="k-top"><span class="k-label">Valor Total</span><i class="bi bi-cash-stack k-icon"></i></div>
+                    <div class="k-value" id="teKpiValor">—</div>
+                </div></div>
+                <div class="col"><div class="kpi">
+                    <div class="k-top"><span class="k-label">Parlamentares</span><i class="bi bi-people k-icon"></i></div>
+                    <div class="k-value" id="teKpiParl">—</div>
+                </div></div>
+            </div>
+
+            <!-- Filtros -->
+            <div class="panel mb-3">
+                <div class="row g-2 align-items-end">
+                    <div class="col-12 col-md-5">
+                        <input type="search" id="teBusca" class="form-control form-control-sm" placeholder="Buscar parlamentar...">
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <select id="teAno" class="form-select form-select-sm">
+                            <option value="">Todos os anos</option>
+                        </select>
+                    </div>
+                    <div class="col-6 col-md-4">
+                        <select id="teOrd" class="form-select form-select-sm">
+                            <option value="valor_desc">Maior valor</option>
+                            <option value="ano_desc">Ano mais recente</option>
+                            <option value="parlamentar_asc">Parlamentar A–Z</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabela desktop -->
+            <div class="panel mb-3 d-none d-md-block">
+                <table class="table table-sm table-hover mb-0" style="font-size:13px;">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Parlamentar</th>
+                            <th>Ano</th>
+                            <th>Função</th>
+                            <th class="text-end">Valor</th>
+                            <th>Documento</th>
+                        </tr>
+                    </thead>
+                    <tbody id="teTbody"></tbody>
+                </table>
+            </div>
+
+            <!-- Cards mobile -->
+            <div id="teCards" class="d-md-none mb-3"></div>
+
+        {% else %}
+            <div class="alert alert-secondary mt-3" role="alert">
+                <i class="bi bi-info-circle me-1"></i>
+                Sem Transferências Especiais (emendas diretas) para <b>{{ nome_cidade }}</b>.
+            </div>
+        {% endif %}
+        </div><!-- /pane-te -->
     </div>
 
     <!-- Detalhe do convênio (offcanvas lateral) -->
@@ -931,7 +1002,7 @@
     (function () {
         // ----- alternância de abas Federal | Estadual -----
         const tabBtns = document.querySelectorAll('.tab-btn');
-        const panes = { federal: document.getElementById('pane-federal'), estadual: document.getElementById('pane-estadual') };
+        const panes = { federal: document.getElementById('pane-federal'), estadual: document.getElementById('pane-estadual'), te: document.getElementById('pane-te') };
         tabBtns.forEach(btn => btn.addEventListener('click', () => {
             const alvo = btn.dataset.tab;
             tabBtns.forEach(b => b.classList.toggle('active', b === btn));
@@ -1140,6 +1211,89 @@
         document.addEventListener('keydown', e => { if (e.key === 'Escape') fecharDet(); });
 
         aplicar();
+    })();
+    </script>
+
+    <!-- ===================== ABA EMENDAS DIRETAS (Transferências Especiais) ===================== -->
+    <script>
+    (function () {
+        const teTbody = document.getElementById('teTbody');
+        const teCards = document.getElementById('teCards');
+        if (!teTbody && !teCards) return;
+
+        const TES = {{ transferencias_especiais | tojson }};
+        const fmtBRL = v => 'R$ ' + Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const esc = s => (s == null ? '' : String(s)).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+        // preenche select de ano
+        const anos = [...new Set(TES.map(t => String(t.ano || '')).filter(Boolean))].sort().reverse();
+        const selAno = document.getElementById('teAno');
+        if (selAno) anos.forEach(a => { const o = document.createElement('option'); o.value = a; o.textContent = a; selAno.appendChild(o); });
+
+        const estado = { busca: '', ano: '', ord: 'valor_desc' };
+        let filtrados = [];
+
+        function calcular() {
+            const q = estado.busca.trim().toLowerCase();
+            filtrados = TES.filter(t => {
+                if (q && !(t.parlamentar || '').toLowerCase().includes(q)) return false;
+                if (estado.ano && String(t.ano || '') !== estado.ano) return false;
+                return true;
+            });
+            filtrados.sort((a, b) => {
+                if (estado.ord === 'valor_desc') return Number(b.valor || 0) - Number(a.valor || 0);
+                if (estado.ord === 'ano_desc') return Number(b.ano || 0) - Number(a.ano || 0);
+                return (a.parlamentar || '').localeCompare(b.parlamentar || '');
+            });
+        }
+
+        function renderizar() {
+            calcular();
+
+            // KPIs
+            const totalVal = filtrados.reduce((s, t) => s + Number(t.valor || 0), 0);
+            const parls = new Set(filtrados.map(t => t.parlamentar).filter(Boolean));
+            const kpiTotal = document.getElementById('teKpiTotal');
+            const kpiValor = document.getElementById('teKpiValor');
+            const kpiParl  = document.getElementById('teKpiParl');
+            if (kpiTotal) kpiTotal.textContent = filtrados.length;
+            if (kpiValor) kpiValor.textContent = fmtBRL(totalVal);
+            if (kpiParl)  kpiParl.textContent  = parls.size;
+
+            // Tabela desktop
+            if (teTbody) {
+                teTbody.innerHTML = filtrados.map(t => `
+                    <tr>
+                        <td><div class="dep-chip" style="margin:0"><i class="bi bi-person-badge"></i>${esc(t.parlamentar)}</div></td>
+                        <td>${esc(t.ano)}</td>
+                        <td style="font-size:12px;color:var(--muted)">${esc(t.funcao)}</td>
+                        <td class="text-end fw-bold">${fmtBRL(t.valor)}</td>
+                        <td style="font-size:11px;font-family:monospace;color:var(--muted)">${esc(t.documento)}</td>
+                    </tr>`).join('') || '<tr><td colspan="5" class="text-center text-muted py-3">Nenhuma transferência encontrada.</td></tr>';
+            }
+
+            // Cards mobile
+            if (teCards) {
+                teCards.innerHTML = filtrados.map(t => `
+                    <div class="conv-card">
+                        <div class="d-flex justify-content-between align-items-start mb-1">
+                            <span class="badge bg-warning text-dark">${esc(t.ano)}</span>
+                            <strong>${fmtBRL(t.valor)}</strong>
+                        </div>
+                        <div class="dep-chip mb-1"><i class="bi bi-person-badge"></i>${esc(t.parlamentar)}</div>
+                        ${t.funcao ? `<div style="font-size:12px;color:var(--muted)">${esc(t.funcao)}</div>` : ''}
+                        ${t.documento ? `<div style="font-size:11px;font-family:monospace;color:var(--muted);margin-top:4px">${esc(t.documento)}</div>` : ''}
+                    </div>`).join('') || '<p class="text-center text-muted py-3">Nenhuma transferência encontrada.</p>';
+            }
+        }
+
+        const buscaEl = document.getElementById('teBusca');
+        if (buscaEl) buscaEl.addEventListener('input', e => { estado.busca = e.target.value; renderizar(); });
+        if (selAno) selAno.addEventListener('change', e => { estado.ano = e.target.value; renderizar(); });
+        const ordEl = document.getElementById('teOrd');
+        if (ordEl) ordEl.addEventListener('change', e => { estado.ord = e.target.value; renderizar(); });
+
+        renderizar();
     })();
     </script>
 </body>

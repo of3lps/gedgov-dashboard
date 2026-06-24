@@ -179,6 +179,19 @@ def carregar_dados(codigo_ibge):
         )
         convenios_sp_brutos = cursor.fetchall()
 
+        # 4. TRANSFERÊNCIAS ESPECIAIS ("pix parlamentar") — repasses diretos sem SICONV
+        cursor.execute(
+            """
+            SELECT payload FROM raw_transferencias_especiais
+            WHERE codigo_ibge = %s
+              AND (payload->>'valor')::numeric >= 1000
+            ORDER BY (payload->>'ano')::int DESC,
+                     (payload->>'valor')::numeric DESC;
+            """,
+            (codigo_ibge,),
+        )
+        tes_brutos = cursor.fetchall()
+
         cursor.close()
 
         # Convênios com valores numéricos (KPIs/gráficos/filtros são calculados no cliente)
@@ -251,11 +264,24 @@ def carregar_dados(codigo_ibge):
                 'assinado': bool(numero and assinatura),
             })
 
-        return convenios, lista_siconfi, convenios_sp
+        # Transferências Especiais: monta lista limpa para o template
+        transferencias_especiais = []
+        for linha in tes_brutos:
+            p = linha['payload']
+            transferencias_especiais.append({
+                'parlamentar': p.get('parlamentar', ''),
+                'valor': _num(p.get('valor', 0)),
+                'ano': p.get('ano', ''),
+                'documento': p.get('documento', ''),
+                'funcao': p.get('funcao', ''),
+                'cod_emenda': p.get('cod_emenda', ''),
+            })
+
+        return convenios, lista_siconfi, convenios_sp, transferencias_especiais
 
     except Exception as e:
         print("Erro:", e)
-        return None, None, None
+        return None, None, None, None
     finally:
         if conexao is not None:
             conexao.close()
@@ -308,7 +334,7 @@ def dashboard():
         cidades_visíveis = None  # sem seletor
 
     nome_cidade = CIDADES.get(codigo_ibge, "Cidade Desconhecida")
-    convenios, siconfi, convenios_sp = carregar_dados(codigo_ibge)
+    convenios, siconfi, convenios_sp, transferencias_especiais = carregar_dados(codigo_ibge)
 
     return render_template('index.html',
                            is_admin=is_admin,
@@ -320,7 +346,9 @@ def dashboard():
                            total_obras=len(convenios) if convenios else 0,
                            siconfi=siconfi,
                            convenios_sp=convenios_sp if convenios_sp is not None else [],
-                           total_sp=len(convenios_sp) if convenios_sp else 0)
+                           total_sp=len(convenios_sp) if convenios_sp else 0,
+                           transferencias_especiais=transferencias_especiais if transferencias_especiais is not None else [],
+                           total_te=len(transferencias_especiais) if transferencias_especiais else 0)
 
 
 # Variável de entrada para a Vercel
