@@ -30,7 +30,7 @@ CIDADES = {
     "5100201": "Água Boa / MT",
     "2305605": "Independência / CE",
     "2301109": "Aracati / CE",
-    "3159803": "Santa Rita do Sapucaí / MG",
+    "3159605": "Santa Rita do Sapucaí / MG",
     "3510500": "Caraguatatuba / SP"
 }
 
