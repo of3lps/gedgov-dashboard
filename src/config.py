@@ -26,6 +26,7 @@ CIDADES = {
     "5107065": "Querência / MT",
     "5100201": "Água Boa / MT",
     "2305605": "Independência / CE",
+    "2301109": "Aracati / CE",
     "3510500": "Caraguatatuba / SP",
 }
 
