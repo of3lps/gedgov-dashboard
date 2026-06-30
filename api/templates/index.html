@@ -236,9 +236,11 @@
             <button class="tab-btn active" data-tab="federal" type="button">
                 <i class="bi bi-bank"></i> Federal{% if total_obras > 0 %} <span class="tab-count">{{ total_obras }}</span>{% endif %}
             </button>
+            {% if is_sp %}
             <button class="tab-btn" data-tab="estadual" type="button">
                 <i class="bi bi-geo-alt"></i> Estadual (SP){% if total_sp > 0 %} <span class="tab-count">{{ total_sp }}</span>{% endif %}
             </button>
+            {% endif %}
             <button class="tab-btn" data-tab="te" type="button">
                 <i class="bi bi-lightning-charge"></i> Emendas Diretas{% if total_te > 0 %} <span class="tab-count">{{ total_te }}</span>{% endif %}
             </button>
@@ -433,6 +435,7 @@
         </div><!-- /pane-federal -->
 
         <!-- ===================== ABA ESTADUAL (SP) ===================== -->
+        {% if is_sp %}
         <div class="tab-pane" id="pane-estadual">
         {% if total_sp > 0 %}
 
@@ -521,6 +524,7 @@
             </div>
         {% endif %}
         </div><!-- /pane-estadual -->
+        {% endif %}
 
         <!-- ===================== ABA EMENDAS DIRETAS (Transferências Especiais) ===================== -->
         <div class="tab-pane" id="pane-te">

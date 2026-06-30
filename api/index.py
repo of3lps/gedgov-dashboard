@@ -338,8 +338,14 @@ def dashboard():
     nome_cidade = CIDADES.get(codigo_ibge, "Cidade Desconhecida")
     convenios, siconfi, convenios_sp, transferencias_especiais = carregar_dados(codigo_ibge)
 
+    # A aba de convênios estaduais só cobre São Paulo (código IBGE começa com "35").
+    # Para municípios de outros estados ainda não temos esses dados, então a aba
+    # não deve ser exibida.
+    is_sp = str(codigo_ibge).startswith("35")
+
     return render_template('index.html',
                            is_admin=is_admin,
+                           is_sp=is_sp,
                            username=session.get('username'),
                            cidades=cidades_visíveis,
                            ibge_atual=codigo_ibge,
