@@ -37,6 +37,7 @@ CIDADES = {
     "5100201": "Água Boa / MT",
     "2305605": "Independência / CE",
     "3510500": "Caraguatatuba / SP",
+    "3522505": "Itapevi / SP",
 }
 
 SQL_CRIAR_TABELA = """

@@ -31,7 +31,8 @@ CIDADES = {
     "2305605": "Independência / CE",
     "2301109": "Aracati / CE",
     "3159605": "Santa Rita do Sapucaí / MG",
-    "3510500": "Caraguatatuba / SP"
+    "3510500": "Caraguatatuba / SP",
+    "3522505": "Itapevi / SP"
 }
 
 IBGE_PADRAO = "3523206"
